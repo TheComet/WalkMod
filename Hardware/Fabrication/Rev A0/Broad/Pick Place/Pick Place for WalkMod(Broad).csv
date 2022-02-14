@@ -1,0 +1,22 @@
+Altium Designer Pick and Place Locations
+D:\electronics\pcb_projects\jobs\WalkMod\Hardware\Fabrication\Pick Place\Pick Place for WalkMod(Broad).csv
+
+========================================================================================================================
+File Design Information:
+
+Date:       14/02/22
+Time:       19:10
+Revision:   a85d50851e069a300712ab9a3349c5472489dd70
+Variant:    Broad
+Units used: mm
+
+"Designator","Comment","Layer","Footprint","Center-X(mm)","Center-Y(mm)","Rotation","Description"
+"R8","RT0402DRD0747KL","TopLayer","RT0402","7.0500","6.2000","0","47 kOhms ±0.5% 0.063W, 1/16W Chip Resistor 0402 (1005 Metric) - Thin Film"
+"R6","AT0402FRE0710KL","TopLayer","AT0402","12.0500","3.7500","270","10 kOhms ±1% 0.063W, 1/16W Chip Resistor 0402 (1005 Metric) Anti-Sulfur, Automotive AEC-Q200, Moisture Resistant Thin Film"
+"R4","3214W-1-103E","TopLayer","BOURNS_3214W_C","5.6500","3.2000","180","10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment"
+"R3","AT0402FRE0710KL","TopLayer","AT0402","12.0500","5.5000","270","10 kOhms ±1% 0.063W, 1/16W Chip Resistor 0402 (1005 Metric) Anti-Sulfur, Automotive AEC-Q200, Moisture Resistant Thin Film"
+"R2","RT0402DRD0747KL","TopLayer","RT0402","7.0500","7.1500","0","47 kOhms ±0.5% 0.063W, 1/16W Chip Resistor 0402 (1005 Metric) - Thin Film"
+"R1","RT0402DRD0747KL","TopLayer","RT0402","7.0500","8.3500","180","47 kOhms ±0.5% 0.063W, 1/16W Chip Resistor 0402 (1005 Metric) - Thin Film"
+"Q3","BC847B-TP","TopLayer","BC8xx_SOT23-3_C","9.8500","2.4000","0","Bipolar (BJT) Transistor NPN 45 V 100 mA 100MHz 225 mW Surface Mount SOT-23"
+"Q2","BC857B-TP","TopLayer","BC8xx_SOT23-3_C","9.8500","5.7000","0","Bipolar (BJT) Transistor PNP 45 V 100 mA 200MHz 310 mW Surface Mount SOT-23"
+"Q1","BC857B-TP","TopLayer","BC8xx_SOT23-3_C","4.4000","7.4000","0","Bipolar (BJT) Transistor PNP 45 V 100 mA 200MHz 310 mW Surface Mount SOT-23"

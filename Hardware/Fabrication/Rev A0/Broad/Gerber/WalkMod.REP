@@ -1,0 +1,100 @@
+*************************************************************
+FileName = WalkMod.GBR
+AutoAperture = True
+*************************************************************
+Generating : Top Paste
+      File : WalkMod.GTP
+
+    Adding Layer      : Top Paste
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D12
+    D13
+    D14
+    D15
+    D16
+*************************************************************
+
+*************************************************************
+Generating : Dimensions
+      File : WalkMod.GM4
+
+    Adding Layer      : Dimensions
+
+
+Used DCodes :
+    D11
+    D30
+*************************************************************
+
+*************************************************************
+Generating : Top Solder
+      File : WalkMod.GTS
+
+    Adding Layer      : Top Solder
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D17
+    D18
+    D19
+    D20
+    D21
+    D22
+    D23
+    D24
+*************************************************************
+
+*************************************************************
+Generating : Top Overlay
+      File : WalkMod.GTO
+
+    Adding Layer      : Top Overlay
+
+
+Used DCodes :
+    D10
+    D11
+*************************************************************
+
+*************************************************************
+Generating : Top Layer
+      File : WalkMod.GTL
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D12
+    D13
+    D14
+    D15
+    D16
+    D25
+    D26
+    D27
+    D28
+*************************************************************
+
+*************************************************************
+Generating : Board Shape
+      File : WalkMod.GM1
+
+    Adding Layer      : Board Shape
+
+
+Used DCodes :
+    D29
+*************************************************************
+
