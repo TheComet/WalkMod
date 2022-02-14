@@ -194,7 +194,7 @@ GenerateClassCluster=0
 DocumentUniqueId=OVBLYIBJ
 
 [Document10]
-DocumentPath=YAGEO-RT-Series.PcbLib
+DocumentPath=YAGEO-Resistors.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
@@ -211,6 +211,23 @@ GenerateClassCluster=0
 DocumentUniqueId=UAONPFQU
 
 [Document11]
+DocumentPath=YAGEO-RC-Series.SchLib
+AnnotationEnabled=1
+AnnotateStartValue=1
+AnnotationIndexControlEnabled=0
+AnnotateSuffix=
+AnnotateScope=All
+AnnotateOrder=-1
+DoLibraryUpdate=1
+DoDatabaseUpdate=1
+ClassGenCCAutoEnabled=1
+ClassGenCCAutoRoomEnabled=1
+ClassGenNCAutoScope=None
+DItemRevisionGUID=
+GenerateClassCluster=0
+DocumentUniqueId=LUHYHVEU
+
+[Document12]
 DocumentPath=YAGEO-RT-Series.SchLib
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -226,23 +243,6 @@ ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=CUGDUOFU
-
-[Document12]
-DocumentPath=YAGEO-AT-Series.PcbLib
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=-1
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-DocumentUniqueId=ABSOPOMI
 
 [Document13]
 DocumentPath=YAGEO-AT-Series.SchLib
