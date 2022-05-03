@@ -1,0 +1,22 @@
+Altium Designer Pick and Place Locations
+D:\electronics\pcb_projects\jobs\WalkMod\Hardware\Fabrication\Rev B0\Pick Place\Pick Place for WalkMod B0.csv
+
+========================================================================================================================
+File Design Information:
+
+Date:       04/05/22
+Time:       00:07
+Revision:   02d3d5b44bc231aedb4844f00d638877c6f95c26
+Variant:    No variations
+Units used: mm
+
+"Designator","Comment","Layer","Footprint","Center-X(mm)","Center-Y(mm)","Rotation","Description"
+"C6","06036C105JAT2A","TopLayer","CX7R0603K","1.8000","12.0000","180","SMD Capacitor"
+"RC","3214W-1-103E","TopLayer","BOURNS_3214W_C","11.5000","2.9000","270","10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment"
+"RA","3214W-1-103E","TopLayer","BOURNS_3214W_C","5.4000","13.1000","0","10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment"
+"C5","06036C105JAT2A","TopLayer","CX7R0603K","7.2000","7.2000","270","SMD Capacitor"
+"C4","06036C105JAT2A","TopLayer","CX7R0603K","3.9000","1.2000","0","SMD Capacitor"
+"C3","06036C105JAT2A","TopLayer","CX7R0603K","18.0000","13.1500","180","SMD Capacitor"
+"C2","06036C105JAT2A","TopLayer","CX7R0603K","18.0000","11.7000","180","SMD Capacitor"
+"C1","06036C105JAT2A","TopLayer","CX7R0603K","18.0000","10.4000","180","SMD Capacitor"
+"RB","3214W-1-103E","TopLayer","BOURNS_3214W_C","16.6000","2.9000","270","10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment"

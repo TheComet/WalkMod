@@ -32,7 +32,7 @@ ReportSuppressedErrorsInMessages=0
 FSMCodingStyle=eFMSDropDownList_OneProcess
 FSMEncodingStyle=eFMSDropDownList_OneHot
 IsProjectConflictPreventionWarningsEnabled=0
-OutputPath=
+OutputPath=Project Outputs for WalkMod B0
 LogFolderPath=
 ManagedProjectGUID=
 IncludeDesignInRelease=0
@@ -132,17 +132,21 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=OTEZZQSI
 
+[GeneratedDocument1]
+DocumentPath=Project Outputs for WalkMod B0\Design Rule Check - WalkMod B0.html
+DItemRevisionGUID=
+
 [Parameter1]
-Name=ProjectTitle
-Value=WalkMod
+Name=Author
+Value=TheComet
 
 [Parameter2]
 Name=BoardRevision
 Value=B0
 
 [Parameter3]
-Name=Author
-Value=TheComet
+Name=ProjectTitle
+Value=WalkMod
 
 [Configuration1]
 Name=Sources
@@ -155,7 +159,7 @@ ContentTypeGUID=CB6F2064-E317-11DF-B822-12313F0024A2
 ConfigurationType=Source
 
 [Generic_EDE]
-OutputDir=
+OutputDir=Project Outputs for WalkMod B0
 
 [OutputGroup1]
 Name=Netlist Outputs

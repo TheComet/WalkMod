@@ -1,0 +1,267 @@
+*************************************************************
+FileName = WalkMod B0.GBR
+AutoAperture = True
+*************************************************************
+Generating : Bottom Layer
+      File : WalkMod B0.GBL
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D51
+    D53
+*************************************************************
+
+*************************************************************
+Generating : Board
+      File : WalkMod B0.GM5
+
+    Adding Layer      : Board
+
+
+Used DCodes :
+    D11
+    D55
+    D56
+*************************************************************
+
+*************************************************************
+Generating : Dimensions
+      File : WalkMod B0.GM4
+
+    Adding Layer      : Dimensions
+
+
+Used DCodes :
+    D11
+    D54
+*************************************************************
+
+*************************************************************
+Generating : Top Layer
+      File : WalkMod B0.GTL
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D13
+    D14
+    D15
+    D16
+    D20
+    D21
+    D22
+    D23
+    D24
+    D25
+    D26
+    D27
+    D47
+    D48
+    D49
+    D50
+    D51
+    D52
+    D53
+*************************************************************
+
+*************************************************************
+Generating : Board Shape
+      File : WalkMod B0.GM1
+
+    Adding Layer      : Board Shape
+
+
+Used DCodes :
+    D10
+*************************************************************
+
+*************************************************************
+Generating : Bottom Solder
+      File : WalkMod B0.GBS
+
+    Adding Layer      : Bottom Solder
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D46
+*************************************************************
+
+*************************************************************
+Generating : Top Paste
+      File : WalkMod B0.GTP
+
+    Adding Layer      : Top Paste
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D13
+    D14
+    D15
+    D16
+    D17
+    D18
+    D19
+    D20
+    D21
+    D22
+    D23
+    D24
+    D25
+    D26
+    D27
+*************************************************************
+
+*************************************************************
+Generating : Bottom Pad Master
+      File : WalkMod B0.GPB
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+*************************************************************
+
+*************************************************************
+Generating : Top Solder
+      File : WalkMod B0.GTS
+
+    Adding Layer      : Top Solder
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D28
+    D29
+    D30
+    D31
+    D32
+    D33
+    D34
+    D35
+    D36
+    D37
+    D38
+    D39
+    D40
+    D41
+    D42
+    D43
+    D44
+    D45
+    D46
+*************************************************************
+
+*************************************************************
+Generating : Bottom Paste
+      File : WalkMod B0.GBP
+
+    Adding Layer      : Bottom Paste
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+*************************************************************
+
+*************************************************************
+Generating : Top Pad Master
+      File : WalkMod B0.GPT
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D13
+    D14
+    D15
+    D16
+    D20
+    D21
+    D22
+    D23
+    D24
+    D25
+    D26
+    D27
+    D47
+    D48
+    D49
+    D50
+*************************************************************
+
+*************************************************************
+Generating : Top Overlay
+      File : WalkMod B0.GTO
+
+    Adding Layer      : Top Overlay
+
+
+Used DCodes :
+    D10
+    D11
+    D12
+*************************************************************
+
+*************************************************************
+Generating : Keep-Out Layer
+      File : WalkMod B0.GKO
+
+    Adding Layer      : Keep-Out Layer
+
+
+Used DCodes :
+*************************************************************
+
+*************************************************************
+Generating : Drill Drawing
+      File : WalkMod B0.GD1
+
+    Adding Drill Pair : Top Layer-Bottom Layer
+
+    Adding Layer      : Drill Drawing
+
+
+Used DCodes :
+    D11
+    D55
+    D57
+    D58
+*************************************************************
+
+*************************************************************
+Generating : Drill Guide
+      File : WalkMod B0.GG1
+
+    Adding Drill Pair : Top Layer-Bottom Layer
+
+    Adding Layer      : Drill Guide
+
+
+Used DCodes :
+    D57
+*************************************************************
+
