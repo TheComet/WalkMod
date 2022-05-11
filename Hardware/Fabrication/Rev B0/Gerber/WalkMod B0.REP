@@ -2,47 +2,8 @@
 FileName = WalkMod B0.GBR
 AutoAperture = True
 *************************************************************
-Generating : Bottom Layer
-      File : WalkMod B0.GBL
-
-    Adding Layer      : Bottom Layer
-
-    Adding Layer      : Multi-Layer
-
-
-Used DCodes :
-    D51
-    D53
-*************************************************************
-
-*************************************************************
-Generating : Board
-      File : WalkMod B0.GM5
-
-    Adding Layer      : Board
-
-
-Used DCodes :
-    D11
-    D55
-    D56
-*************************************************************
-
-*************************************************************
-Generating : Dimensions
-      File : WalkMod B0.GM4
-
-    Adding Layer      : Dimensions
-
-
-Used DCodes :
-    D11
-    D54
-*************************************************************
-
-*************************************************************
-Generating : Top Layer
-      File : WalkMod B0.GTL
+Generating : Top Pad Master
+      File : WalkMod B0.GPT
 
     Adding Layer      : Top Layer
 
@@ -54,8 +15,8 @@ Used DCodes :
     D14
     D15
     D16
-    D20
-    D21
+    D17
+    D18
     D22
     D23
     D24
@@ -66,35 +27,19 @@ Used DCodes :
     D48
     D49
     D50
-    D51
-    D52
-    D53
 *************************************************************
 
 *************************************************************
-Generating : Board Shape
-      File : WalkMod B0.GM1
+Generating : Top Overlay
+      File : WalkMod B0.GTO
 
-    Adding Layer      : Board Shape
+    Adding Layer      : Top Overlay
 
 
 Used DCodes :
     D10
-*************************************************************
-
-*************************************************************
-Generating : Bottom Solder
-      File : WalkMod B0.GBS
-
-    Adding Layer      : Bottom Solder
-
-    Adding Layer      : Bottom Layer
-
-    Adding Layer      : Multi-Layer
-
-
-Used DCodes :
-    D46
+    D11
+    D12
 *************************************************************
 
 *************************************************************
@@ -172,10 +117,10 @@ Used DCodes :
 *************************************************************
 
 *************************************************************
-Generating : Bottom Paste
-      File : WalkMod B0.GBP
+Generating : Bottom Solder
+      File : WalkMod B0.GBS
 
-    Adding Layer      : Bottom Paste
+    Adding Layer      : Bottom Solder
 
     Adding Layer      : Bottom Layer
 
@@ -183,11 +128,62 @@ Generating : Bottom Paste
 
 
 Used DCodes :
+    D46
 *************************************************************
 
 *************************************************************
-Generating : Top Pad Master
-      File : WalkMod B0.GPT
+Generating : Board Shape
+      File : WalkMod B0.GM1
+
+    Adding Layer      : Board Shape
+
+
+Used DCodes :
+    D10
+*************************************************************
+
+*************************************************************
+Generating : Dimensions
+      File : WalkMod B0.GM4
+
+    Adding Layer      : Dimensions
+
+
+Used DCodes :
+    D11
+    D54
+*************************************************************
+
+*************************************************************
+Generating : Board
+      File : WalkMod B0.GM5
+
+    Adding Layer      : Board
+
+
+Used DCodes :
+    D11
+    D55
+    D56
+*************************************************************
+
+*************************************************************
+Generating : Bottom Layer
+      File : WalkMod B0.GBL
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D52
+    D53
+*************************************************************
+
+*************************************************************
+Generating : Top Layer
+      File : WalkMod B0.GTL
 
     Adding Layer      : Top Layer
 
@@ -199,8 +195,8 @@ Used DCodes :
     D14
     D15
     D16
-    D20
-    D21
+    D17
+    D18
     D22
     D23
     D24
@@ -211,19 +207,23 @@ Used DCodes :
     D48
     D49
     D50
+    D51
+    D52
+    D53
 *************************************************************
 
 *************************************************************
-Generating : Top Overlay
-      File : WalkMod B0.GTO
+Generating : Bottom Paste
+      File : WalkMod B0.GBP
 
-    Adding Layer      : Top Overlay
+    Adding Layer      : Bottom Paste
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
 
 
 Used DCodes :
-    D10
-    D11
-    D12
 *************************************************************
 
 *************************************************************
