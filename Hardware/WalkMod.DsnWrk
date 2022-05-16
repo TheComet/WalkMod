@@ -1,10 +1,12 @@
 [ProjectGroup]
 Version=1.0
-[Project0]
-ProjectPath=Libs\WalkMod.LibPkg
 [Project1]
-ProjectPath=WalkMod C0\WalkMod C0.PrjPcb
+ProjectPath=AngleMod V1\AngleMod V1.PrjPcb
 [Project2]
+ProjectPath=WalkMod C0\WalkMod C0.PrjPcb
+[Project3]
 ProjectPath=WalkMod B0\WalkMod B0.PrjPcb
 [Project4]
 ProjectPath=WalkMod A0\WalkMod A0.PrjPcb
+[Project5]
+ProjectPath=Libs\WalkMod.LibPkg
