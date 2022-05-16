@@ -4,19 +4,18 @@ D:\electronics\pcb_projects\jobs\WalkMod\Hardware\Fabrication\Rev C0\Pick Place\
 ========================================================================================================================
 File Design Information:
 
-Date:       15/05/22
-Time:       11:06
-Revision:   Not in VersionControl
+Date:       16/05/22
+Time:       03:11
+Revision:   ecc34effd2015cc3c1385f568d725c2f23ae1a0b
 Variant:    No variations
 Units used: mm
 
 Designator Comment           Layer    Footprint       Center-X(mm) Center-Y(mm) Rotation Description                                                                                      
-C5         CL10B105KA8NFNC   TopLayer CX7R0603K       0.9500       12.4000      270      "1 µF ±10% 25V Ceramic Capacitor X7R 0603 (1608 Metric)"                                         
-Q1         BC857B-TP         TopLayer BC8xx_SOT23-3_C 4.2000       7.0000       180      "Bipolar (BJT) Transistor PNP 45 V 100 mA 200MHz 310 mW Surface Mount SOT-23"                    
-RC         3214W-1-103E      TopLayer BOURNS_3214W_C  4.9000       2.7500       90       "10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment" 
+C4         CL10B105KA8NFNC   TopLayer CX7R0603K       0.9500       10.8000      270      "1 µF ±10% 25V Ceramic Capacitor X7R 0603 (1608 Metric)"                                         
+Q1         BC857B-TP         TopLayer BC8xx_SOT23-3_C 4.4500       11.0000      180      "Bipolar (BJT) Transistor PNP 45 V 100 mA 200MHz 310 mW Surface Mount SOT-23"                    
+RC         3214W-1-103E      TopLayer BOURNS_3214W_C  9.7000       2.7500       90       "10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment" 
 RA         3214W-1-103E      TopLayer BOURNS_3214W_C  15.1000      2.7500       90       "10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment" 
-C4         CL10B105KA8NFNC   TopLayer CX7R0603K       8.0000       17.1000      180      "1 µF ±10% 25V Ceramic Capacitor X7R 0603 (1608 Metric)"                                         
-C3         CC0603KRX7R6BB224 TopLayer CX7R0603K       7.1500       5.7000       0        "0.22 µF ±10% 10V Ceramic Capacitor X7R 0603 (1608 Metric)"                                      
-C2         CL10B474KO8NFNC   TopLayer CX7R0603K       7.2500       6.9500       0        "0.47 µF ±10% 16V Ceramic Capacitor X7R 0603 (1608 Metric)"                                      
-C1         CL10B105KA8NFNC   TopLayer CX7R0603K       7.2500       8.2000       0        "1 µF ±10% 25V Ceramic Capacitor X7R 0603 (1608 Metric)"                                         
-RB         3214W-1-103E      TopLayer BOURNS_3214W_C  10.0000      2.7500       90       "10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment" 
+C3         CC0603KRX7R6BB224 TopLayer CX7R0603K       7.3000       9.9500       0        "0.22 µF ±10% 10V Ceramic Capacitor X7R 0603 (1608 Metric)"                                      
+C2         CL10B474KO8NFNC   TopLayer CX7R0603K       7.3000       11.2000      0        "0.47 µF ±10% 16V Ceramic Capacitor X7R 0603 (1608 Metric)"                                      
+C1         CL10B105KA8NFNC   TopLayer CX7R0603K       7.3000       12.4500      0        "1 µF ±10% 25V Ceramic Capacitor X7R 0603 (1608 Metric)"                                         
+RB         3214W-1-103E      TopLayer BOURNS_3214W_C  4.3000       2.7500       90       "10 kOhms 0.25W, 1/4W J Lead Surface Mount Trimmer Potentiometer Cermet 5.0 Turn Top Adjustment" 

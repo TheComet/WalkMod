@@ -137,16 +137,16 @@ DocumentPath=Project Outputs for WalkMod C0\Design Rule Check - WalkMod C0.html
 DItemRevisionGUID=
 
 [Parameter1]
-Name=ProjectTitle
-Value=WalkMod
+Name=Author
+Value=TheComet
 
 [Parameter2]
 Name=BoardRevision
 Value=C0
 
 [Parameter3]
-Name=Author
-Value=TheComet
+Name=ProjectTitle
+Value=WalkMod
 
 [Configuration1]
 Name=Sources

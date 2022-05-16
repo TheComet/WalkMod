@@ -2,6 +2,110 @@
 FileName = WalkMod C0.GBR
 AutoAperture = True
 *************************************************************
+Generating : Board
+      File : WalkMod C0.GM5
+
+    Adding Layer      : Board
+
+
+Used DCodes :
+    D12
+    D51
+    D52
+*************************************************************
+
+*************************************************************
+Generating : Dimensions
+      File : WalkMod C0.GM4
+
+    Adding Layer      : Dimensions
+
+
+Used DCodes :
+    D12
+    D50
+*************************************************************
+
+*************************************************************
+Generating : Board Shape
+      File : WalkMod C0.GM1
+
+    Adding Layer      : Board Shape
+
+
+Used DCodes :
+    D10
+*************************************************************
+
+*************************************************************
+Generating : Keep-Out Layer
+      File : WalkMod C0.GKO
+
+    Adding Layer      : Keep-Out Layer
+
+
+Used DCodes :
+*************************************************************
+
+*************************************************************
+Generating : Bottom Paste
+      File : WalkMod C0.GBP
+
+    Adding Layer      : Bottom Paste
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+*************************************************************
+
+*************************************************************
+Generating : Bottom Solder
+      File : WalkMod C0.GBS
+
+    Adding Layer      : Bottom Solder
+
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+*************************************************************
+
+*************************************************************
+Generating : Top Solder
+      File : WalkMod C0.GTS
+
+    Adding Layer      : Top Solder
+
+    Adding Layer      : Top Layer
+
+    Adding Layer      : Multi-Layer
+
+
+Used DCodes :
+    D28
+    D29
+    D30
+    D31
+    D32
+    D33
+    D34
+    D35
+    D36
+    D37
+    D38
+    D39
+    D40
+    D41
+    D42
+    D43
+*************************************************************
+
+*************************************************************
 Generating : Top Paste
       File : WalkMod C0.GTP
 
@@ -30,88 +134,17 @@ Used DCodes :
 *************************************************************
 
 *************************************************************
-Generating : Top Solder
-      File : WalkMod C0.GTS
+Generating : Top Overlay
+      File : WalkMod C0.GTO
 
-    Adding Layer      : Top Solder
-
-    Adding Layer      : Top Layer
-
-    Adding Layer      : Multi-Layer
-
-
-Used DCodes :
-    D16
-    D28
-    D29
-    D30
-    D31
-    D32
-    D33
-    D34
-    D35
-    D36
-    D37
-    D38
-    D39
-    D40
-    D41
-    D42
-    D43
-    D44
-    D45
-*************************************************************
-
-*************************************************************
-Generating : Bottom Layer
-      File : WalkMod C0.GBL
-
-    Adding Layer      : Bottom Layer
-
-    Adding Layer      : Multi-Layer
+    Adding Layer      : Top Overlay
 
 
 Used DCodes :
     D10
-    D51
-*************************************************************
-
-*************************************************************
-Generating : Keep-Out Layer
-      File : WalkMod C0.GKO
-
-    Adding Layer      : Keep-Out Layer
-
-
-Used DCodes :
-*************************************************************
-
-*************************************************************
-Generating : Board
-      File : WalkMod C0.GM5
-
-    Adding Layer      : Board
-
-
-Used DCodes :
+    D11
     D12
-    D53
-    D54
-*************************************************************
-
-*************************************************************
-Generating : Bottom Solder
-      File : WalkMod C0.GBS
-
-    Adding Layer      : Bottom Solder
-
-    Adding Layer      : Bottom Layer
-
-    Adding Layer      : Multi-Layer
-
-
-Used DCodes :
-    D45
+    D13
 *************************************************************
 
 *************************************************************
@@ -130,52 +163,15 @@ Used DCodes :
     D17
     D18
     D19
-    D23
-    D24
-    D25
+    D20
+    D21
+    D22
+    D26
     D27
+    D44
+    D45
     D46
     D47
-    D48
-    D49
-    D50
-*************************************************************
-
-*************************************************************
-Generating : Bottom Paste
-      File : WalkMod C0.GBP
-
-    Adding Layer      : Bottom Paste
-
-    Adding Layer      : Bottom Layer
-
-    Adding Layer      : Multi-Layer
-
-
-Used DCodes :
-*************************************************************
-
-*************************************************************
-Generating : Board Shape
-      File : WalkMod C0.GM1
-
-    Adding Layer      : Board Shape
-
-
-Used DCodes :
-    D11
-*************************************************************
-
-*************************************************************
-Generating : Dimensions
-      File : WalkMod C0.GM4
-
-    Adding Layer      : Dimensions
-
-
-Used DCodes :
-    D12
-    D52
 *************************************************************
 
 *************************************************************
@@ -191,17 +187,17 @@ Used DCodes :
 *************************************************************
 
 *************************************************************
-Generating : Top Overlay
-      File : WalkMod C0.GTO
+Generating : Bottom Layer
+      File : WalkMod C0.GBL
 
-    Adding Layer      : Top Overlay
+    Adding Layer      : Bottom Layer
+
+    Adding Layer      : Multi-Layer
 
 
 Used DCodes :
-    D10
     D11
-    D12
-    D13
+    D49
 *************************************************************
 
 *************************************************************
@@ -214,23 +210,24 @@ Generating : Top Layer
 
 
 Used DCodes :
-    D10
+    D11
     D14
     D15
     D16
     D17
     D18
     D19
-    D23
-    D24
-    D25
+    D20
+    D21
+    D22
+    D26
     D27
+    D44
+    D45
     D46
     D47
     D48
     D49
-    D50
-    D51
 *************************************************************
 
 *************************************************************
@@ -244,9 +241,9 @@ Generating : Drill Drawing
 
 Used DCodes :
     D12
+    D51
     D53
-    D55
-    D56
+    D54
 *************************************************************
 
 *************************************************************
@@ -259,6 +256,6 @@ Generating : Drill Guide
 
 
 Used DCodes :
-    D55
+    D53
 *************************************************************
 
