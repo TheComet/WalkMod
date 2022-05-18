@@ -1,0 +1,16 @@
+Altium Designer Pick and Place Locations
+D:\electronics\pcb_projects\jobs\WalkMod\Hardware\Fabrication\AngleMod V1\Pick Place\Pick Place for AngleMod V1.csv
+
+========================================================================================================================
+File Design Information:
+
+Date:       18/05/22
+Time:       01:12
+Revision:   659cadd48604bf56db964220ab94e74767b0b035
+Variant:    No variations
+Units used: mm
+
+"Designator","Comment","Layer","Footprint","Center-X(mm)","Center-Y(mm)","Rotation","Description"
+"C1","CC0603KRX7R6BB224","TopLayer","CX7R0603K","8.5000","7.0500","180","0.22 µF ±10% 10V Ceramic Capacitor X7R 0603 (1608 Metric)"
+"C3","06036C105JAT2A","TopLayer","CX7R0603K","10.0500","5.2500","0","SMD Capacitor"
+"C2","CC0603KRX7R6BB224","TopLayer","CX7R0603K","10.8500","7.0500","0","0.22 µF ±10% 10V Ceramic Capacitor X7R 0603 (1608 Metric)"

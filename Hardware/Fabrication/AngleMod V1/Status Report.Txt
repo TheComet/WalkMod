@@ -1,0 +1,12 @@
+Output: NC Drill Files
+Type  : NC Drill
+From  : PCB Document [AngleMod V1.PcbDoc]
+   Generated File[AngleMod V1.TXT]
+   Generated File[AngleMod V1.LDP]
+   Generated File[AngleMod V1.DRR]
+
+
+Files Generated   : 3
+Documents Printed : 0
+
+Finished Output Generation At 1:12:05 AM On 5/18/2022
