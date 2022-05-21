@@ -1,0 +1,6 @@
+*
+!/.gitignore
+!/nbproject
+!/nbproject/configurations.xml
+!/nbproject/project.xml
+!/Makefile

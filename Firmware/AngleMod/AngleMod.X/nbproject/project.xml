@@ -3,18 +3,18 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>TiltMod</name>
-            <creation-uuid>77a24ceb-4756-47db-93ab-e6e22d5e2262</creation-uuid>
+            <name>AngleMod</name>
+            <creation-uuid>14f82c01-2b3c-42b6-a80d-0f8fc1dfaa8a</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>
             <cpp-extensions/>
-            <header-extensions/>
+            <header-extensions>h</header-extensions>
             <asminc-extensions/>
             <sourceEncoding>ISO-8859-1</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
                 <sourceRootElem>../src</sourceRootElem>
-                <sourceRootElem>.</sourceRootElem>
+                <sourceRootElem>../include/anglemod</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>
