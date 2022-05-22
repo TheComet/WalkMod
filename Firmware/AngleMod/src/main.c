@@ -14,6 +14,7 @@
 #include "anglemod/joy.h"
 #include "anglemod/dac.h"
 #include "anglemod/cmd_seq.h"
+#include "anglemod/cli.h"
 
 // We're operating at 3.3V
 #pragma config VDDAR = 0
@@ -41,6 +42,8 @@ void main(void)
     
     while (1)
     {
+        char c;
+        
         if (btn_pressed_get_and_clear())
         {
             active_cmd = cmd_seq_determine_command();
@@ -69,6 +72,10 @@ void main(void)
                 cmd_seq_push_joy_angle(joy_x(), joy_y());
             }
         }
+        
+        /* Update CLI with incoming data */
+        while (rb_rx_take_single(&c))
+            cli_putc(c);
         
         SLEEP();
         NOP();  /* Instruction following sleep instruction is always executed */

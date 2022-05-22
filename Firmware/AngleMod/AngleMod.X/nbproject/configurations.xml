@@ -12,6 +12,7 @@
       <itemPath>../include/anglemod/dac.h</itemPath>
       <itemPath>../include/anglemod/uart.h</itemPath>
       <itemPath>../include/anglemod/cli.h</itemPath>
+      <itemPath>../include/anglemod/rb.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
