@@ -13,8 +13,8 @@
             <sourceEncoding>ISO-8859-1</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
-                <sourceRootElem>../src</sourceRootElem>
-                <sourceRootElem>../include/anglemod</sourceRootElem>
+                <sourceRootElem>src</sourceRootElem>
+                <sourceRootElem>include/anglemod</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

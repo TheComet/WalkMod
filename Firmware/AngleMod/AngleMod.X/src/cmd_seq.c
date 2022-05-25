@@ -1,20 +1,18 @@
 #include "anglemod/cmd_seq.h"
-
-static uint8_t thresh1_l = 80;
-static uint8_t thresh1_h = 90;
-static uint8_t thresh2_l = 165;
-static uint8_t thresh2_h = 175;
+#include "anglemod/param.h"
 
 static enum joy_state state_history[3];
 
 /* -------------------------------------------------------------------------- */
 void cmd_seq_configure(uint8_t xythreshold, uint8_t hysteresis)
 {
+    struct param* p = param_get();
+    
     uint8_t h2 = (uint8_t)(hysteresis / 2);
-    thresh1_l = (uint8_t)(128 - xythreshold - h2);
-    thresh1_h = (uint8_t)(128 - xythreshold + h2);
-    thresh2_l = (uint8_t)(128 + xythreshold - h2);
-    thresh2_h = (uint8_t)(128 + xythreshold + h2);
+    p->cmd_seq.thresh1_l = (uint8_t)(128 - xythreshold - h2);
+    p->cmd_seq.thresh1_h = (uint8_t)(128 - xythreshold + h2);
+    p->cmd_seq.thresh2_l = (uint8_t)(128 + xythreshold - h2);
+    p->cmd_seq.thresh2_h = (uint8_t)(128 + xythreshold + h2);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -31,60 +29,62 @@ static void push_state(enum joy_state state)
 /* -------------------------------------------------------------------------- */
 void cmd_seq_push_joy_angle(uint8_t x, uint8_t y)
 {
+    const struct param* p = param_get();
+    
     /* Divide 2D space into a 3x3 grid and detect which grid the joystick is in */
-    if (x < thresh1_l)
+    if (x < p->cmd_seq.thresh1_l)
     {
-        if (y < thresh1_l) {
+        if (y < p->cmd_seq.thresh1_l) {
             push_state(JOY_SW); 
             return;
         }
-        if (y < thresh1_h)
+        if (y < p->cmd_seq.thresh1_h)
             return;
-        if (y < thresh2_l) {
+        if (y < p->cmd_seq.thresh2_l) {
             push_state(JOY_W);
             return;
         }
-        if (y < thresh2_h)
+        if (y < p->cmd_seq.thresh2_h)
             return;
         push_state(JOY_NW);
         return;
     }
     
-    if (x < thresh1_l)
+    if (x < p->cmd_seq.thresh1_l)
         return;
     
-    if (x < thresh2_l)
+    if (x < p->cmd_seq.thresh2_l)
     {
-        if (y < thresh1_l) {
+        if (y < p->cmd_seq.thresh1_l) {
             push_state(JOY_S);
             return;
         }
-        if (y < thresh1_h)
+        if (y < p->cmd_seq.thresh1_h)
             return;
-        if (y < thresh2_l) {
+        if (y < p->cmd_seq.thresh2_l) {
             push_state(JOY_NEUTRAL);
             return;
         }
-        if (y < thresh2_h)
+        if (y < p->cmd_seq.thresh2_h)
             return;
         push_state(JOY_N);
         return;
     }
     
-    if (x < thresh2_h)
+    if (x < p->cmd_seq.thresh2_h)
         return;
     
-    if (y < thresh1_l) {
+    if (y < p->cmd_seq.thresh1_l) {
         push_state(JOY_SE);
         return;
     }
-    if (y < thresh1_h)
+    if (y < p->cmd_seq.thresh1_h)
         return;
-    if (y < thresh2_l) {
+    if (y < p->cmd_seq.thresh2_l) {
         push_state(JOY_E);
         return;
     }
-    if (y < thresh2_h)
+    if (y < p->cmd_seq.thresh2_h)
         return;
     push_state(JOY_NE);
 }

@@ -4,3 +4,6 @@
 !/nbproject/configurations.xml
 !/nbproject/project.xml
 !/Makefile
+!/src**
+!/include**
+
