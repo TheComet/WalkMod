@@ -7,66 +7,33 @@
 void pic16_init(void);
 void pic16_process_events(void);
 
-void COMReadThread(HANDLE hPort)
+static void DataReceived(const char* buf, DWORD bytesRead)
 {
-    while (1)
+    for (DWORD i = 0; i != bytesRead; ++i)
     {
-        char c[5];
-        DWORD bytesRead = 0;
-        OVERLAPPED ov = {0};
-        if (ReadFile(hPort, c, 5, &bytesRead, &ov) == FALSE)
-            if (GetLastError() == ERROR_IO_PENDING)
-                GetOverlappedResult(hPort, &ov, &bytesRead, TRUE);
-        if (bytesRead == 0) // GetOverlappedResult doesn't block after second read? No idea why
-            continue;
-
-        RC1REG = c[0];
+        RC1REG = buf[i];
         uart_rx_isr();
-        if (bytesRead > 1)
-        {
-            RC1REG = c[1];
-            uart_rx_isr();
-        }
-        if (bytesRead > 2)
-        {
-            RC1REG = c[2];
-            uart_rx_isr();
-        }
-        if (bytesRead > 3)
-        {
-            RC1REG = c[3];
-            uart_rx_isr();
-        }
-        if (bytesRead > 4)
-        {
-            RC1REG = c[4];
-            uart_rx_isr();
-        }
-
-        Sleep(1);
     }
 }
 
-void COMWriteThread(HANDLE hPort)
+void COMWrite(HANDLE hPort)
 {
-    while (1) 
+    static char buf[TX_BUF_SIZE];
+    DWORD len = 0;
+    while (PIE1bits.TX1IE)
     {
-        if (PIE1bits.TX1IE)
-        {
-            uart_tx_isr();
-            if (PIE1bits.TX1IE == 0)
-                continue;
-            char c = TX1REG;
-            printf("%c", c);
-
-            DWORD bytesWritten = 0;
-            OVERLAPPED ov = {};
-            WriteFile(hPort, &c, 1, &bytesWritten, &ov);
-            GetOverlappedResult(hPort, &ov, &bytesWritten, TRUE);
-
-            Sleep(1);
-        }
+        uart_tx_isr();
+        if (PIE1bits.TX1IE == 0)
+            break;
+        buf[len++] = TX1REG;
     }
+    buf[len] = 0;
+
+    DWORD bytesWritten = 0;
+    OVERLAPPED ov = { 0 };
+    WriteFile(hPort, buf, len, &bytesWritten, &ov);
+    GetOverlappedResult(hPort, &ov, &bytesWritten, TRUE);
+    printf("%s", buf);
 }
 
 int main(int argc, char** argv)
@@ -83,18 +50,51 @@ int main(int argc, char** argv)
     cc.dcb.fOutxDsrFlow = FALSE;
     SetCommState(hPort, &cc.dcb);*/
 
-    std::thread readThread(COMReadThread, hPort);
-    std::thread writeThread(COMWriteThread, hPort);
+    char readBuf[5];
+    char writeBuf[1];
+    DWORD bytesRead = 0;
+    DWORD bytesWritten = 0;
+    HANDLE readEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    HANDLE writeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    OVERLAPPED readOv = { 0 };
+    OVERLAPPED writeOv = { 0 };
+    readOv.hEvent = readEvent;
+    writeOv.hEvent = writeEvent;
 
     pic16_init();
-    while (1) 
+    while (1)
     {
-        pic16_process_events();
-        Sleep(1);
-    }
+        bytesRead = 0;
+        if (ReadFile(hPort, readBuf, sizeof(readBuf), &bytesRead, &readOv) == FALSE)
+        {
+            switch (GetLastError())
+            {
+            case ERROR_IO_PENDING: {
+                switch (WaitForSingleObject(readEvent, INFINITE))
+                {
+                case WAIT_OBJECT_0:
+                    if (GetOverlappedResult(hPort, &readOv, &bytesRead, TRUE) == FALSE)
+                        goto exitProgram;
+                    break;
 
-    readThread.join();
-    writeThread.join();
+                case WAIT_ABANDONED:
+                case WAIT_TIMEOUT:
+                case WAIT_FAILED:
+                    goto exitProgram;
+                }
+            } break;
+
+            default:
+                goto exitProgram;
+            }
+        }
+
+        DataReceived(readBuf, bytesRead);
+        pic16_process_events();
+        COMWrite(hPort);
+
+        Sleep(1);
+    } exitProgram:;
 
     CloseHandle(hPort);
 

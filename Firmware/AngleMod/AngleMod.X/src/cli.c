@@ -25,10 +25,24 @@ static uint8_t csi_param_idx = 0;
 
 void (*cli_putc)(char c) = cli_putc_normal;
 
+static void cmd_help(uint8_t argc, char** argv);
+static void cmd_toggle(uint8_t argc, char** argv);
+static void cmd_thresh(uint8_t argc, char** argv);
+static void cmd_save(uint8_t argc, char** argv);
+
 struct cli_cmd {
     const char* name;
+    const char* param;
     const char* help;
     void (*handler)(uint8_t argc, char** argv);
+};
+
+static struct cli_cmd commands[] = {
+    {"help", "", "Print help", cmd_help},
+    {"toggle", "<index>", "Enable/disable different modes", cmd_toggle},
+    {"threshold", "<xy value> [hysteresis]", "Configure how command inputs are detected", cmd_thresh},
+    {"save", "", "Save changes to non-volatile memory", cmd_save},
+    {NULL}
 };
 
 /* -------------------------------------------------------------------------- */
@@ -38,21 +52,59 @@ static void set_cursor_horiz(uint8_t idx)
 }
 
 /* -------------------------------------------------------------------------- */
+#define isatoz(c) (c >= 'a' && c <= 'z')
+static void cmd_help(uint8_t argc, char** argv)
+{
+    uart_puts("\r\n\x1B[1;37mAvailable Commands:");
+    for (const struct cli_cmd* cmd = commands; cmd->name; ++cmd)
+    {
+        uart_printf("\r\n\x1B[1;36m  %s ", cmd->name);
+
+        if (cmd->param[0])
+        {
+            const char* param_start = cmd->param;
+            const char* param_end = cmd->param;
+            for (; *param_end; ++param_end)
+            {
+                switch ((isatoz(*param_start) << 1) | isatoz(*param_end))
+                {
+                case 1:  /* Transition from '<' to 'a' */
+                    uart_puts("\x1B[0m");
+                    uart_putbytes(param_start, (uint8_t)(param_end - param_start));
+                    param_start = param_end;
+                    break;
+
+                case 2:  /* Transition from 'a' to '>' */
+                    uart_puts("\x1B[1;33m");
+                    uart_putbytes(param_start, (uint8_t)(param_end - param_start));
+                    param_start = param_end;
+                    break;
+                }
+            }
+            uart_puts("\x1B[0m");
+            uart_putbytes(param_start, (uint8_t)(param_end - param_start));
+        }
+
+        uart_printf("\r\n\x1B[0m    %s", cmd->help);
+    }
+}
+
+/* -------------------------------------------------------------------------- */
 static void print_toggle_states()
 {
     const struct param* p = param_get();
 
-    uart_puts("\r\n(1) Normal Mode:      ");
+    uart_puts("\r\n(\x1B[1;33m1\x1B[0m) Normal Mode:      ");
     uart_printf("\x1B[1;3%cm%s\x1B[0m\r\n",
         p->enable.normal_mode == 0 ? '1' : '2',
         p->enable.normal_mode == 0 ? "Off" : p->enable.normal_mode == 1 ? "Clamp" : "Quantize");
 
-    uart_puts("(2) Angle Modifiers:  ");
+    uart_puts("(\x1B[1;33m2\x1B[0m) Angle Modifiers:  ");
     uart_printf("\x1B[1;3%cm%s\x1B[0m\r\n",
         p->enable.angle_modifiers == 0 ? '1' : '2',
         p->enable.angle_modifiers == 0 ? "Off" : "On");
 
-    uart_puts("(3) Command Inputs:   ");
+    uart_puts("(\x1B[1;33m3\x1B[0m) Command Inputs:   ");
     uart_printf("\x1B[1;3%cm%s\x1B[0m",
         p->enable.command_inputs == 0 ? '1' : '2',
         p->enable.command_inputs == 0 ? "Off" : "On");
@@ -107,13 +159,6 @@ static void cmd_save(uint8_t argc, char** argv)
     param_save_to_nvm();
     uart_puts("\r\n\x1b[1;32mSuccess: \x1b[0mValues written to NVM");
 }
-
-static struct cli_cmd commands[] = {
-    {"toggle", "", cmd_toggle},
-    {"thresh", "", cmd_thresh},
-    {"save", "", cmd_save},
-    {NULL}
-};
 
 /* -------------------------------------------------------------------------- */
 static uint8_t split_args(char* s, char** argv, uint8_t maxsplit)

@@ -131,6 +131,7 @@ enum cmd_seq cmd_seq_determine_command(void)
                 case JOY_N : return CMD_DOUBLE_UP_ZIP;
                 default    : return CMD_NONE;
             }
+            default: break;
         }
 
         case JOY_S : switch (state_history[1])
@@ -145,6 +146,7 @@ enum cmd_seq cmd_seq_determine_command(void)
                 case JOY_W : return CMD_TSW_W;
                 default    : return CMD_NONE;
             }
+            default: break;
         }
 
         default : return CMD_NONE;

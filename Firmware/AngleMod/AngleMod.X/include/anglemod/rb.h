@@ -12,7 +12,7 @@
  * ```
  *
  * The buffer is considered empty when rb->read == rb->write. It is considered
- * full when rb->write is one slot behind rb->write. This is necessary because
+ * full when rb->write is one slot behind rb->read. This is necessary because
  * otherwise there would be no way to tell the difference between an empty and
  * a full ring buffer.
  */
@@ -22,87 +22,93 @@
 #include <stdint.h>
 #include <string.h>
 
-#define RB_DECLARE_API(name, T)                                               \
-    uint8_t rb_##name##_put_single(const T* data);                            \
-    uint8_t rb_##name##_put(const T* data, uint8_t len);                      \
-    uint8_t rb_##name##_take(T* data, uint8_t maxlen);                        \
-    uint8_t rb_##name##_take_single(T* data);                                 \
-    uint8_t rb_##name##_count(void);                                          \
+#define RB_DECLARE_API(name, T, S)                                            \
+    void rb_##name##_init(void);                                              \
+    S rb_##name##_put_single(const T* data);                                  \
+    S rb_##name##_put_single_value(T data);                                   \
+    S rb_##name##_put(const T* data, S len);                                  \
+    S rb_##name##_take(T* data, S maxlen);                                    \
+    S rb_##name##_take_single(T* data);                                       \
+    S rb_##name##_count(void);                                                \
 
-#define RB_DEFINE_API(name, T, N)                                             \
+#define RB_DEFINE_API(name, T, N, S)                                          \
     static struct                                                             \
     {                                                                         \
-        volatile uint8_t read;                                                \
-        volatile uint8_t write;                                               \
+        volatile S read;                                                      \
+        volatile S write;                                                     \
         T buffer[N];                                                          \
     } rb_##name;                                                              \
                                                                               \
     /* -------------------------------------------------------------------- */\
-    uint8_t rb_##name##_put_single(const T* data)                             \
+    void rb_##name##_init(void)                                               \
     {                                                                         \
-        if (RB_IS_FULL(rb_##name.read, rb_##name.write, N))                   \
+        rb_##name.read = 0;                                                   \
+        rb_##name.write = 0;                                                  \
+    }                                                                         \
+                                                                              \
+    /* -------------------------------------------------------------------- */\
+    S rb_##name##_put_single(const T* data)                                   \
+    {                                                                         \
+        if (RB_IS_FULL(&rb_##name, N))                                        \
             return 0;                                                         \
                                                                               \
-        uint8_t write = rb_##name.write;                                      \
+        S write = rb_##name.write;                                            \
         rb_##name.buffer[write] = *data;                                      \
         rb_##name.write = (write + 1u) & ((N)-1u);                            \
         return 1;                                                             \
     }                                                                         \
                                                                               \
     /* -------------------------------------------------------------------- */\
-    uint8_t rb_##name##_put(const T* data, uint8_t len)                       \
+    S rb_##name##_put_single_value(T data)                                    \
     {                                                                         \
-        uint8_t copy1;                                                        \
-                                                                              \
-        if (RB_IS_FULL(rb_##name.read, rb_##name.write, N))                   \
-            return 0;                                                         \
-                                                                              \
-        RB_SPACE_TO_END(copy1, rb_##name.read, rb_##name.write, N);           \
-        if (copy1 > len)                                                      \
-            copy1 = len;                                                      \
-        memcpy(rb_##name.buffer + rb_##name.write, data, copy1 * sizeof(T));  \
-        len -= copy1;                                                         \
-                                                                              \
-        if (len == 0)                                                         \
-        {                                                                     \
-            rb_##name.write = (uint8_t)(rb_##name.write + copy1) & ((N)-1u);  \
-            return copy1;                                                     \
-        }                                                                     \
-        else                                                                  \
-        {                                                                     \
-            uint8_t copy2;                                                    \
-            RB_SPACE_TO_END(copy2, rb_##name.read, 0, N);                     \
-            if (copy2 > len)                                                  \
-                copy2 = len;                                                  \
-            memcpy(rb_##name.buffer, data + copy1, copy2);                    \
-            rb_##name.write = copy2;                                          \
-            return (uint8_t)(copy1 + copy2);                                  \
-        }                                                                     \
+        return rb_##name##_put_single(&data);                                 \
     }                                                                         \
                                                                               \
     /* -------------------------------------------------------------------- */\
-    uint8_t rb_##name##_take(T* data, uint8_t maxlen)                         \
+    static S rb_##name##_put_contiguous(const T* data, S len)                 \
     {                                                                         \
-        uint8_t read, cont_space;                                             \
-        if (RB_IS_EMPTY(rb_##name.read, rb_##name.write, N))                  \
-            return 0;                                                         \
-                                                                              \
-        read = rb_##name.read;                                                \
-        RB_COUNT_TO_END(cont_space, rb_##name.read, rb_##name.write, N);      \
-        cont_space = (uint8_t)(cont_space > maxlen ? maxlen : cont_space);    \
-        memcpy(data, rb_##name.buffer + read, cont_space * sizeof(T));        \
-        rb_##name.read = (uint8_t)(read + cont_space) & ((N)-1u);             \
-                                                                              \
-        return cont_space + (cont_space == 0u ? 0u :                          \
-                rb_##name##_take(data + cont_space,                           \
-                                 (uint8_t)(maxlen - cont_space)));            \
+        S count;                                                              \
+        RB_SPACE_TO_END(count, &rb_##name, N, S);                             \
+        if (count > len)                                                      \
+            count = len;                                                      \
+        memcpy(rb_##name.buffer + rb_##name.write, data, count * sizeof(T));  \
+        rb_##name.write = (S)(rb_##name.write + count) & ((N)-1u);            \
+        return count;                                                         \
+    }                                                                         \
+    S rb_##name##_put(const T* data, S len)                                   \
+    {                                                                         \
+        S count = rb_##name##_put_contiguous(data, len);                      \
+        S left = len - count;                                                 \
+        if (left)                                                             \
+            count += rb_##name##_put_contiguous(data + count, left);          \
+        return count;                                                         \
     }                                                                         \
                                                                               \
     /* -------------------------------------------------------------------- */\
-    uint8_t rb_##name##_take_single(T* data)                                  \
+    static S rb_##name##_take_contiguous(T* data, S maxlen)                   \
     {                                                                         \
-        uint8_t read;                                                         \
-        if (RB_IS_EMPTY(rb_##name.read, rb_##name.write, N))                  \
+        S count;                                                              \
+        RB_COUNT_TO_END(count, &rb_##name, N, S);                             \
+        if (count > maxlen)                                                   \
+            count = maxlen;                                                   \
+        memcpy(data, rb_##name.buffer + rb_##name.read, count * sizeof(T));   \
+        rb_##name.read = (S)(rb_##name.read + count) & ((N)-1u);              \
+        return count;                                                         \
+    }                                                                         \
+    S rb_##name##_take(T* data, S maxlen)                                     \
+    {                                                                         \
+        S count = rb_##name##_take_contiguous(data, maxlen);                  \
+        S left = maxlen - count;                                              \
+        if (left)                                                             \
+            count += rb_##name##_take_contiguous(data + count, left);         \
+        return count;                                                         \
+    }                                                                         \
+                                                                              \
+    /* -------------------------------------------------------------------- */\
+    S rb_##name##_take_single(T* data)                                        \
+    {                                                                         \
+        S read;                                                               \
+        if (RB_IS_EMPTY(&rb_##name, N))                                       \
             return 0;                                                         \
                                                                               \
         read = rb_##name.read;                                                \
@@ -112,9 +118,9 @@
     }                                                                         \
                                                                               \
     /* -------------------------------------------------------------------- */\
-    uint8_t rb_##name##_count(void)                                           \
+    S rb_##name##_count(void)                                                 \
     {                                                                         \
-        return RB_COUNT(rb_##name.read, rb_##name.write, N);                  \
+        return RB_COUNT(&rb_##name, N);                                       \
     }
 
 /*
@@ -122,28 +128,28 @@
  * accessed once.
  */
 
-#define RB_COUNT(read, write, N) \
-        (((write) - (read)) & ((N)-1u))
+#define RB_COUNT(rb, N) \
+        (((rb)->write - (rb)->read) & ((N)-1u))
 
-#define RB_SPACE(read, write, N) \
-        (RB_COUNT((write)+1u, (read), N))
+#define RB_SPACE(rb, N) \
+        (((rb)->read - (rb)->write - 1) & ((N)-1u))
 
-#define RB_IS_FULL(read, write, N) \
-        (((write + 1u) & ((N)-1u)) == read)
+#define RB_IS_FULL(rb, N) \
+        ((((rb)->write + 1u) & ((N)-1u)) == (rb)->read)
 
-#define RB_IS_EMPTY(read, write, N) \
-        ((read) == (write))
+#define RB_IS_EMPTY(rb, N) \
+        ((rb)->read == (rb)->write)
 
-#define RB_COUNT_TO_END(result, read, write, N) {            \
-            uint8_t end = (uint8_t)((N) - (read));           \
-            uint8_t n = (uint8_t)((write) + end) & ((N)-1u); \
-            result = (uint8_t)(n < end ? n : end);           \
+#define RB_COUNT_TO_END(result, rb, N, S) {                      \
+            S end = (S)((N) - (rb)->read);                       \
+            S n = (S)((rb)->write + end) & ((N)-1u);             \
+            result = (S)(n < end ? n : end);                     \
         }
 
-#define RB_SPACE_TO_END(result, read, write, N) {           \
-            uint8_t end = (uint8_t)(((N)-1u) - (write))   ; \
-            uint8_t n = (uint8_t)(end + (read)) & ((N)-1u); \
-            result = n <= end ? n : end + 1u;               \
+#define RB_SPACE_TO_END(result, rb, N, S) {                      \
+            S end = (S)(((N)-1u) - (rb)->write);                 \
+            S n = (S)(end + (rb)->read) & ((N)-1u);              \
+            result = n <= end ? n : end + 1u;                    \
         }
 
 #endif	/* RB_H */

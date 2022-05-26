@@ -17,7 +17,7 @@
 #include "anglemod/cmd_seq.h"
 #include "anglemod/cli.h"
 
-#if !defined(CLI_SIM)
+#if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 
 // We're operating at 3.3V
 #pragma config VDDAR = 0
@@ -30,7 +30,7 @@
 static enum cmd_seq active_cmd = CMD_NONE;
 
 /* -------------------------------------------------------------------------- */
-#if !defined(CLI_SIM)
+#if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 static void init(void)
 #else
 void pic16_init(void)
@@ -56,7 +56,7 @@ void pic16_init(void)
 }
 
 /* -------------------------------------------------------------------------- */
-#if !defined(CLI_SIM)
+#if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 static void process_events(void)
 #else
 void pic16_process_events(void)
@@ -99,7 +99,7 @@ void pic16_process_events(void)
 }
 
 /* -------------------------------------------------------------------------- */
-#if !defined(CLI_SIM)
+#if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 void main(void)
 {
     init();

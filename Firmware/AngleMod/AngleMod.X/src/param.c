@@ -1,7 +1,7 @@
 #include "anglemod/param.h"
 #include <xc.h>
 
-#if !defined(CLI_SIM)
+#if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 #pragma config SAFEN = 0
 #endif
 
@@ -9,7 +9,7 @@ static struct param param;
 
 /* -------------------------------------------------------------------------- */
 static struct param default_param() {
-#if defined(CLI_SIM)
+#if defined(CLI_SIM) || defined(GTEST_TESTING)
     struct param p = { 0 };
 #else
     struct param p = {

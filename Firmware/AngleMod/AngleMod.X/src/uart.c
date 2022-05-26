@@ -3,8 +3,8 @@
 #include <xc.h>
 #include <stdarg.h>
 
-RB_DEFINE_API(tx, char, TX_BUF_SIZE)
-RB_DEFINE_API(rx, char, RX_BUF_SIZE)
+RB_DEFINE_API(rx, char, RX_BUF_SIZE, RX_RWTYPE)
+RB_DEFINE_API(tx, char, TX_BUF_SIZE, TX_RWTYPE)
 
 /* -------------------------------------------------------------------------- */
 void uart_init(void)
