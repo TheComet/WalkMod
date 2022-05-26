@@ -1,7 +1,9 @@
 #include "anglemod/param.h"
 #include <xc.h>
 
+#if !defined(CLI_SIM)
 #pragma config SAFEN = 0
+#endif
 
 static struct param param;
 
@@ -11,11 +13,14 @@ static struct param default_param() {
     struct param p = { 0 };
 #else
     struct param p = {
+        .enable = { 
+            .normal_mode = 0x01,  /* Clamp mode */
+            .angle_modifiers = 1,
+            .command_inputs = 1
+        },
         .cmd_seq = {
-            .thresh1_l = 80,
-            .thresh1_h = 90,
-            .thresh2_l = 165,
-            .thresh2_h = 175
+            .xythreshold = 85,
+            .hysteresis = 10
         },
         .dac_clamp = {
             .xl = 85,

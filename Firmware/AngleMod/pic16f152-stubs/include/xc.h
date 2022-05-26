@@ -118,7 +118,7 @@ struct NVMCON1bits {
 };
 extern volatile struct NVMCON1bits NVMCON1bits;
 
-extern volatile uint8_t NVMADR;
+extern volatile uint16_t NVMADR;
 extern volatile uint8_t NVMCON2;
 extern volatile uint8_t NVMDATL;
 

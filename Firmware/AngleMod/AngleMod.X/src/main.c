@@ -17,11 +17,15 @@
 #include "anglemod/cmd_seq.h"
 #include "anglemod/cli.h"
 
+#if !defined(CLI_SIM)
+
 // We're operating at 3.3V
 #pragma config VDDAR = 0
 
 // Disable watchdog
 #pragma config WDTE = 0
+
+#endif
 
 static enum cmd_seq active_cmd = CMD_NONE;
 
@@ -32,6 +36,8 @@ static void init(void)
 void pic16_init(void)
 #endif
 {
+    const struct param* p;
+
     /* Init system-level stuff */
     osc_init();
     gpio_init();
@@ -39,9 +45,11 @@ void pic16_init(void)
     param_init();
 
     /* Init user-level stuff */
+    p = param_get();
     joy_init();
     btn_init();
     dac_init();
+    cmd_seq_configure(p->cmd_seq.xythreshold, p->cmd_seq.hysteresis);
 
     /* Enable interrupts */
     INTCONbits.GIE = 1;

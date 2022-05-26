@@ -11,10 +11,14 @@
 struct param
 {
     struct {
-        uint8_t thresh1_l;
-        uint8_t thresh1_h;
-        uint8_t thresh2_l;
-        uint8_t thresh2_h;
+        unsigned normal_mode : 2;  /* 00 = OFF, 01 = clamp, 10 = quantize */
+        unsigned angle_modifiers : 1;
+        unsigned command_inputs : 1;
+    } enable;
+
+    struct {
+        uint8_t xythreshold;
+        uint8_t hysteresis;
     } cmd_seq;
     
     struct {

@@ -87,16 +87,28 @@ void uart_printf(const char* fmt, ...)
                     uart_putu(value);
                 } break;
                 
+                case 'c': {
+                    uart_putc(va_arg(ap, char));
+                } break;
+                
                 case '%': {
                     uart_putc('%');
                 } break;
+
+                case '\0': {
+                    va_end(ap);
+                    return;
+                }
             }
-            ++end;
-            fmt = end;
+            fmt = end + 1;
         }
     }
     
-    uart_putbytes(fmt, (uint8_t)(end - fmt));
+    {
+        uint8_t len = (uint8_t)(end - fmt);
+        if (len > 0)
+            uart_putbytes(fmt, len);
+    }
     
     va_end(ap);
 }
