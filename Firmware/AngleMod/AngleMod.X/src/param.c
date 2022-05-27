@@ -8,33 +8,7 @@
 static struct param param;
 
 /* -------------------------------------------------------------------------- */
-static struct param default_param() {
-#if defined(CLI_SIM) || defined(GTEST_TESTING)
-    struct param p = { 0 };
-#else
-    struct param p = {
-        .enable = { 
-            .normal_mode = 0x01,  /* Clamp mode */
-            .angle_modifiers = 1,
-            .command_inputs = 1
-        },
-        .cmd_seq = {
-            .xythreshold = 85,
-            .hysteresis = 10
-        },
-        .dac_clamp = {
-            .xl = 85,
-            .xh = 171,
-            .yl = 85,
-            .yh = 171
-        }
-    };
-#endif
-    return p;
-}
-
-/* -------------------------------------------------------------------------- */
-void param_init(void)
+void param_load_from_nvm(void)
 {
     uint8_t* data_start = (uint8_t*)&param;
     uint8_t* data_end = (uint8_t*)&param + sizeof(param);
@@ -58,8 +32,25 @@ void param_init(void)
      * default values */
     if (param.dac_clamp.xl == param.dac_clamp.xh)
     {
-        param = default_param();
+        param_set_defaults();
     }
+}
+
+/* -------------------------------------------------------------------------- */
+void param_set_defaults(void)
+{
+    param.enable.normal_mode = 0x01;  /* Clamp mode */
+    param.enable.a_angles = 1;
+    param.enable.b_angles = 1;
+    param.enable.c_angles = 1;
+
+    param.cmd_seq.xythreshold = 85;
+    param.cmd_seq.hysteresis = 10;
+
+    param.dac_clamp.xl = 85;
+    param.dac_clamp.xh = 171;
+    param.dac_clamp.yl = 85;
+    param.dac_clamp.yh = 171;
 }
 
 /* -------------------------------------------------------------------------- */

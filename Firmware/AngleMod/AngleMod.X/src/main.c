@@ -42,9 +42,9 @@ void pic16_init(void)
     osc_init();
     gpio_init();
     uart_init();
-    param_init();
 
     /* Init user-level stuff */
+    param_load_from_nvm();
     p = param_get();
     joy_init();
     btn_init();

@@ -4,6 +4,26 @@
 #include <ctype.h>  /* isprint() */
 
 #define PROMPT "> "
+#define DEGREES "\xC2\xB0"
+
+#define CLEAR(x)   "\x1b[0m" x
+#define RED(x)     "\x1b[1;31m" x
+#define GREEN(x)   "\x1b[1;32m" x
+#define YELLOW(x)  "\x1b[1;33m" x
+#define BLUE(x)    "\x1b[1;34m" x
+#define MAGENTA(x) "\x1b[1;35m" x
+#define CYAN(x)    "\x1b[1;36m" x
+#define WHITE(x)   "\x1b[1;37m" x
+#define REDC(x)     "\x1b[1;31m" x "\x1b[0m"
+#define GREENC(x)   "\x1b[1;32m" x "\x1b[0m"
+#define YELLOWC(x)  "\x1b[1;33m" x "\x1b[0m"
+#define BLUEC(x)    "\x1b[1;34m" x "\x1b[0m"
+#define MAGENTAC(x) "\x1b[1;35m" x "\x1b[0m"
+#define CYANC(x)    "\x1b[1;36m" x "\x1b[0m"
+#define WHITEC(x)   "\x1b[1;37m" x "\x1b[0m"
+
+#define PAREN1(x, color) "(" color(x) CLEAR(")")
+#define PAREN2(x1, x2, color) "(" color(x1) CLEAR(",") color(x2) CLEAR(")")
 
 static void cli_putc_normal(char c);
 static void cli_putc_escape(char c);
@@ -28,7 +48,10 @@ void (*cli_putc)(char c) = cli_putc_normal;
 static void cmd_help(uint8_t argc, char** argv);
 static void cmd_toggle(uint8_t argc, char** argv);
 static void cmd_thresh(uint8_t argc, char** argv);
+static void cmd_slight(uint8_t argc, char** argv);
 static void cmd_save(uint8_t argc, char** argv);
+static void cmd_discard(uint8_t argc, char** argv);
+static void cmd_defaults(uint8_t argc, char** argv);
 
 struct cli_cmd {
     const char* name;
@@ -41,7 +64,10 @@ static struct cli_cmd commands[] = {
     {"help", "", "Print help", cmd_help},
     {"toggle", "<index>", "Enable/disable different modes", cmd_toggle},
     {"threshold", "<xy value> [hysteresis]", "Configure how command inputs are detected", cmd_thresh},
+    {"slight", "<index> <angle|<x> <y>>", "Configure slight angles", cmd_slight},
     {"save", "", "Save changes to non-volatile memory", cmd_save},
+    {"load", "", "Load values from non-volatile memory, discarding any changes", cmd_discard},
+    {"defaults", "", "Set default values", cmd_defaults},
     {NULL}
 };
 
@@ -55,10 +81,10 @@ static void set_cursor_horiz(uint8_t idx)
 #define isatoz(c) (c >= 'a' && c <= 'z')
 static void cmd_help(uint8_t argc, char** argv)
 {
-    uart_puts("\r\n\x1B[1;37mAvailable Commands:");
+    uart_puts(WHITE("\r\nAvailable Commands:"));
     for (const struct cli_cmd* cmd = commands; cmd->name; ++cmd)
     {
-        uart_printf("\r\n\x1B[1;36m  %s ", cmd->name);
+        uart_printf(GREEN("\r\n  %s "), cmd->name);
 
         if (cmd->param[0])
         {
@@ -69,23 +95,23 @@ static void cmd_help(uint8_t argc, char** argv)
                 switch ((isatoz(*param_start) << 1) | isatoz(*param_end))
                 {
                 case 1:  /* Transition from '<' to 'a' */
-                    uart_puts("\x1B[0m");
+                    uart_puts(CLEAR(""));
                     uart_putbytes(param_start, (uint8_t)(param_end - param_start));
                     param_start = param_end;
                     break;
 
                 case 2:  /* Transition from 'a' to '>' */
-                    uart_puts("\x1B[1;33m");
+                    uart_puts(YELLOW(""));
                     uart_putbytes(param_start, (uint8_t)(param_end - param_start));
                     param_start = param_end;
                     break;
                 }
             }
-            uart_puts("\x1B[0m");
+            uart_puts(CLEAR(""));
             uart_putbytes(param_start, (uint8_t)(param_end - param_start));
         }
 
-        uart_printf("\r\n\x1B[0m    %s", cmd->help);
+        uart_printf(CLEAR("\r\n    %s"), cmd->help);
     }
 }
 
@@ -94,20 +120,30 @@ static void print_toggle_states()
 {
     const struct param* p = param_get();
 
-    uart_puts("\r\n(\x1B[1;33m1\x1B[0m) Normal Mode:      ");
-    uart_printf("\x1B[1;3%cm%s\x1B[0m\r\n",
+    static const char* fmt = "\r\n" PAREN1("%u", YELLOW) " %s : " "\x1B[1;3%cm%s\x1B[0m";
+    static const char* mode_name_table[] = {
+        "Normal Mode",
+        "A-Angles   ",
+        "B-Angles   ",
+        "C-Angles   "
+    };
+
+    char angles_table[] = {
+        p->enable.a_angles,
+        p->enable.b_angles,
+        p->enable.c_angles
+    };
+
+    uart_printf(fmt, 1, mode_name_table[0],
         p->enable.normal_mode == 0 ? '1' : '2',
         p->enable.normal_mode == 0 ? "Off" : p->enable.normal_mode == 1 ? "Clamp" : "Quantize");
 
-    uart_puts("(\x1B[1;33m2\x1B[0m) Angle Modifiers:  ");
-    uart_printf("\x1B[1;3%cm%s\x1B[0m\r\n",
-        p->enable.angle_modifiers == 0 ? '1' : '2',
-        p->enable.angle_modifiers == 0 ? "Off" : "On");
-
-    uart_puts("(\x1B[1;33m3\x1B[0m) Command Inputs:   ");
-    uart_printf("\x1B[1;3%cm%s\x1B[0m",
-        p->enable.command_inputs == 0 ? '1' : '2',
-        p->enable.command_inputs == 0 ? "Off" : "On");
+    for (uint8_t i = 1; i != 4; ++i)
+    {
+        uart_printf(fmt, i+1, mode_name_table[i],
+            angles_table[i-1] ? '2' : '1',
+            angles_table[i-1] ? "On" : "Off");
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -129,13 +165,16 @@ static void cmd_toggle(uint8_t argc, char** argv)
             p->enable.normal_mode = 0;
         break;
     case '2':
-        p->enable.angle_modifiers = ~p->enable.angle_modifiers;
+        p->enable.a_angles = ~p->enable.a_angles;
         break;
     case '3':
-        p->enable.command_inputs = ~p->enable.command_inputs;
+        p->enable.b_angles = ~p->enable.b_angles;
+        break;
+    case '4':
+        p->enable.c_angles = ~p->enable.c_angles;
         break;
     default:
-        uart_puts("\r\n\x1b[1;31mError: \x1b[0mExpected a value from 1-3");
+        uart_puts(REDC("\r\nError: ") "Expected a value from 1-3");
         return;
     }
     print_toggle_states();
@@ -154,10 +193,81 @@ static void cmd_thresh(uint8_t argc, char** argv)
 }
 
 /* -------------------------------------------------------------------------- */
+static void cmd_slight(uint8_t argc, char** argv)
+{
+#define ARROW_LEFT       "\xF0\x9F\xA1\xA0"
+#define ARROW_UP         "\xF0\x9F\xA1\xA1"
+#define ARROW_RIGHT      "\xF0\x9F\xA1\xA2"
+#define ARROW_DOWN       "\xF0\x9F\xA1\xA3"
+#define ARROW_UP_LEFT    "\xF0\x9F\xA1\xA4"
+#define ARROW_UP_RIGHT   "\xF0\x9F\xA1\xA5"
+#define ARROW_DOWN_RIGHT "\xF0\x9F\xA1\xA6"
+#define ARROW_DOWN_LEFT  "\xF0\x9F\xA1\xA7"
+
+    static const char* arrow_table[20] = {
+        /* A-Angles */
+        ARROW_UP ARROW_UP_RIGHT,
+        ARROW_RIGHT ARROW_UP_RIGHT,
+        ARROW_RIGHT ARROW_DOWN_RIGHT,
+        ARROW_DOWN ARROW_DOWN_RIGHT,
+        ARROW_UP ARROW_UP_LEFT,
+        ARROW_LEFT ARROW_UP_LEFT,
+        ARROW_LEFT ARROW_DOWN_LEFT,
+        ARROW_DOWN ARROW_DOWN_LEFT,
+
+        /* B-Angles */
+        ARROW_UP_RIGHT ARROW_UP,
+        ARROW_UP_RIGHT ARROW_RIGHT,
+        ARROW_DOWN_RIGHT ARROW_RIGHT,
+        ARROW_DOWN_RIGHT ARROW_DOWN,
+        ARROW_UP_LEFT ARROW_UP,
+        ARROW_UP_LEFT ARROW_LEFT,
+        ARROW_DOWN_LEFT ARROW_LEFT,
+        ARROW_DOWN_LEFT ARROW_DOWN,
+
+        /* C-Angles */
+        ARROW_RIGHT ARROW_UP_RIGHT ARROW_UP,
+        ARROW_RIGHT ARROW_DOWN_RIGHT ARROW_DOWN,
+        ARROW_LEFT ARROW_UP_LEFT ARROW_UP,
+        ARROW_LEFT ARROW_DOWN_LEFT ARROW_DOWN
+    };
+
+    static const char* fmt = "\r\n  " PAREN1("%c%u", YELLOW) "%s + x:  " GREENC("%u" DEGREES) PAREN2("%u", "%u", CYAN);
+    
+    struct param* p = param_get();
+
+    uart_puts(MAGENTAC("\r\nA-Angles:"));
+    for (uint8_t i = 1; i <= 8; ++i)
+        uart_printf(fmt, 'a', i, arrow_table[i-1], 45, 255, 255);
+
+    uart_puts(MAGENTAC("\r\nB-Angles:"));
+    for (uint8_t i = 1; i <= 8; ++i)
+        uart_printf(fmt, 'b', i, arrow_table[i+7], 45, 255, 255);
+
+    uart_puts(MAGENTAC("\r\nC-Angles:"));
+    for (uint8_t i = 1; i <= 4; ++i)
+        uart_printf(fmt, 'c', i, arrow_table[i+15], 45, 255, 255);
+}
+
+/* -------------------------------------------------------------------------- */
 static void cmd_save(uint8_t argc, char** argv)
 {
     param_save_to_nvm();
-    uart_puts("\r\n\x1b[1;32mSuccess: \x1b[0mValues written to NVM");
+    uart_puts("\r\nValues written to NVM");
+}
+
+/* -------------------------------------------------------------------------- */
+static void cmd_discard(uint8_t argc, char** argv)
+{
+    param_load_from_nvm();
+    uart_puts("\r\nValues loaded from NVM");
+}
+
+/* -------------------------------------------------------------------------- */
+static void cmd_defaults(uint8_t argc, char** argv)
+{
+    param_set_defaults();
+    uart_puts("\r\nDefault values set\r\n" CYANC("Note: ") "Use " GREENC("save") " if you want to keep default values");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -193,7 +303,7 @@ static void execute_current_line(void)
         return;
     }
 
-    uart_puts("\r\n\x1b[1;31mError: \x1b[0mUnknown command");
+    uart_puts(REDC("\r\nError:") " Unknown command");
 }
 
 /* -------------------------------------------------------------------------- */
