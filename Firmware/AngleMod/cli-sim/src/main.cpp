@@ -1,6 +1,8 @@
 #include <Windows.h>
 #include <thread>
 #include "anglemod/uart.h"
+#include "anglemod/joy.h"
+#include "anglemod/btn.h"
 #include <xc.h>
 #include <cstdio>
 
@@ -31,9 +33,38 @@ void COMWrite(HANDLE hPort)
 
     DWORD bytesWritten = 0;
     OVERLAPPED ov = { 0 };
-    WriteFile(hPort, buf, len, &bytesWritten, &ov);
-    GetOverlappedResult(hPort, &ov, &bytesWritten, TRUE);
-    printf("%s", buf);
+    if (len > 0)
+    {
+        WriteFile(hPort, buf, len, &bytesWritten, &ov);
+        GetOverlappedResult(hPort, &ov, &bytesWritten, TRUE);
+        printf("%s", buf);
+    }
+}
+
+void JoystickToADC(void)
+{
+    JOYINFO ji;
+    joyGetPos(0, &ji);
+
+    joy_tim0_isr();  /* Triggers measurement of X and Y */
+    ADRESH = ji.wXpos / 256;
+    joy_adc_isr();
+    ADRESH = 255 - ji.wYpos / 256;
+    joy_adc_isr();
+
+    static UINT lastButtons = 0;
+    if (ji.wButtons & ~lastButtons)
+    {
+        PORTA = 0x10;
+        btn_ioc_isr();
+    }
+    else if (~ji.wButtons & lastButtons)
+    {
+        PORTA = 0x00;
+        btn_ioc_isr();
+    }
+    lastButtons = ji.wButtons;
+
 }
 
 int main(int argc, char** argv)
@@ -42,54 +73,52 @@ int main(int argc, char** argv)
     if (hPort == INVALID_HANDLE_VALUE)
         return -1;
 
-    COMMCONFIG cc;
-    /*GetCommState(hPort, &cc.dcb);
-    cc.dcb.fDtrControl = DTR_CONTROL_DISABLE;
-    cc.dcb.fRtsControl = RTS_CONTROL_DISABLE;
-    cc.dcb.fOutxCtsFlow = FALSE;
-    cc.dcb.fOutxDsrFlow = FALSE;
-    SetCommState(hPort, &cc.dcb);*/
-
     char readBuf[5];
-    char writeBuf[1];
     DWORD bytesRead = 0;
-    DWORD bytesWritten = 0;
     HANDLE readEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    HANDLE writeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     OVERLAPPED readOv = { 0 };
-    OVERLAPPED writeOv = { 0 };
     readOv.hEvent = readEvent;
-    writeOv.hEvent = writeEvent;
+
+    bool readPending = false;
 
     pic16_init();
     while (1)
     {
-        bytesRead = 0;
-        if (ReadFile(hPort, readBuf, sizeof(readBuf), &bytesRead, &readOv) == FALSE)
+        if (readPending == false)
         {
-            switch (GetLastError())
+            bytesRead = 0;
+            if (ReadFile(hPort, readBuf, sizeof(readBuf), &bytesRead, &readOv) == TRUE)
             {
-            case ERROR_IO_PENDING: {
-                switch (WaitForSingleObject(readEvent, INFINITE))
+                DataReceived(readBuf, bytesRead);
+            }
+            else
+            {
+                switch (GetLastError())
                 {
-                case WAIT_OBJECT_0:
-                    if (GetOverlappedResult(hPort, &readOv, &bytesRead, TRUE) == FALSE)
-                        goto exitProgram;
+                case ERROR_IO_PENDING:
+                    readPending = true;
                     break;
-
-                case WAIT_ABANDONED:
-                case WAIT_TIMEOUT:
-                case WAIT_FAILED:
+                default:
                     goto exitProgram;
                 }
-            } break;
-
-            default:
-                goto exitProgram;
             }
         }
 
-        DataReceived(readBuf, bytesRead);
+        if (readPending)
+        {
+            if (GetOverlappedResult(hPort, &readOv, &bytesRead, FALSE))
+            {
+                DataReceived(readBuf, bytesRead);
+                readPending = false;
+            }
+            else
+            {
+                if (GetLastError() != ERROR_IO_INCOMPLETE)
+                    goto exitProgram;
+            }
+        }
+
+        JoystickToADC();
         pic16_process_events();
         COMWrite(hPort);
 

@@ -7,6 +7,8 @@ volatile struct PORTAbits PORTAbits;
 volatile struct PORTBbits PORTBbits;
 volatile struct PORTCbits PORTCbits;
 
+volatile uint8_t IOCAF;
+
 volatile uint8_t PORTA;
 volatile uint8_t PORTB;
 volatile uint8_t PORTC;
@@ -46,3 +48,5 @@ volatile uint8_t NVMDATL;
 
 volatile uint8_t TX1REG;
 volatile uint8_t RC1REG;
+
+volatile uint8_t ADRESH;

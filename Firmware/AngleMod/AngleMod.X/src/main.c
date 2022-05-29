@@ -27,7 +27,7 @@
 
 #endif
 
-static enum cmd_seq active_cmd = CMD_NONE;
+static enum cmd_seq active_seq = SEQ_NONE;
 
 /* -------------------------------------------------------------------------- */
 #if !defined(CLI_SIM) && !defined(GTEST_TESTING)
@@ -66,9 +66,9 @@ void pic16_process_events(void)
 
     if (btn_pressed_get_and_clear())
     {
-        active_cmd = cmd_seq_determine_command();
+        active_seq = cmd_seq_determine_command();
 
-        if (active_cmd == CMD_NONE)
+        if (active_seq == SEQ_NONE)
         {
             dac_override_clamp(joy_x(), joy_y());
             joy_set_fast_sampling_mode();
@@ -84,7 +84,7 @@ void pic16_process_events(void)
     {
         if (btn_is_active())
         {
-            if (active_cmd == CMD_NONE)
+            if (active_seq == SEQ_NONE)
                 dac_override_clamp(joy_x(), joy_y());
         }
         else
@@ -119,8 +119,8 @@ void main(void)
  * call the appropriate handler from here */
 void __interrupt() isr(void)
 {
-    if (PIR0bits.INTF)
-        btn_int_isr();
+    if (IOCAF & 0x10)
+        btn_ioc_isr();
     if (PIR0bits.TMR0IF)
         joy_tim0_isr();
     if (PIR1bits.ADIF)

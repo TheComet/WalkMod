@@ -8,33 +8,71 @@
 
 #include <stdint.h>
 
+#define ARROW_W  "\xF0\x9F\xA1\xA0"
+#define ARROW_N  "\xF0\x9F\xA1\xA1"
+#define ARROW_E  "\xF0\x9F\xA1\xA2"
+#define ARROW_S  "\xF0\x9F\xA1\xA3"
+#define ARROW_NW "\xF0\x9F\xA1\xA4"
+#define ARROW_NE "\xF0\x9F\xA1\xA5"
+#define ARROW_SE "\xF0\x9F\xA1\xA6"
+#define ARROW_SW "\xF0\x9F\xA1\xA7"
+
+#define JOY_STATE_LIST \
+    X(NEUTRAL, "neutral") \
+    X(N, "N")   \
+    X(NE, "NE") \
+    X(E, "E")   \
+    X(SE, "SE") \
+    X(S, "S")   \
+    X(SW, "SW") \
+    X(W, "W")   \
+    X(NW, "NW")
+
+#define SEQ_LIST                                \
+    X(NONE, "none")                             \
+    /* Cardinal angles */                       \
+    X(CARD_N_NE, ARROW_N ARROW_NE)              \
+    X(CARD_E_NE, ARROW_E ARROW_NE)              \
+    X(CARD_E_SE, ARROW_E ARROW_SE)              \
+    X(CARD_S_SE, ARROW_S ARROW_SE)              \
+    X(CARD_N_NW, ARROW_N ARROW_NW)              \
+    X(CARD_W_NW, ARROW_W ARROW_NW)              \
+    X(CARD_W_SW, ARROW_W ARROW_SW)              \
+    X(CARD_S_SW, ARROW_S ARROW_SW)              \
+    /* Diagonal angles */                       \
+    X(DIAG_NE_N, ARROW_NE ARROW_N)              \
+    X(DIAG_NE_E, ARROW_NE ARROW_E)              \
+    X(DIAG_SE_E, ARROW_SE ARROW_E)              \
+    X(DIAG_SE_S, ARROW_SE ARROW_S)              \
+    X(DIAG_NW_N, ARROW_NW ARROW_N)              \
+    X(DIAG_NW_W, ARROW_NW ARROW_W)              \
+    X(DIAG_SW_W, ARROW_SW ARROW_W)              \
+    X(DIAG_SW_S, ARROW_SW ARROW_S)              \
+    /* Special angles */                        \
+    X(SPEC_E_NE_N, ARROW_E ARROW_NE ARROW_N)    \
+    X(SPEC_E_SE_S, ARROW_E ARROW_SE ARROW_S)    \
+    X(SPEC_W_NW_N, ARROW_W ARROW_NW ARROW_N)    \
+    X(SPEC_W_SW_S, ARROW_W ARROW_SW ARROW_S)    \
+    X(SPEC_N_NE_E, ARROW_N ARROW_NE ARROW_E)    \
+    X(SPEC_S_SE_E, ARROW_S ARROW_SE ARROW_E)    \
+    X(SPEC_N_NW_W, ARROW_N ARROW_NW ARROW_W)    \
+    X(SPEC_S_SW_W, ARROW_S ARROW_SW ARROW_W)
+
 enum joy_state
 {
-    JOY_NEUTRAL,
-    JOY_N,
-    JOY_NE,
-    JOY_E,
-    JOY_SE,
-    JOY_S,
-    JOY_SW,
-    JOY_W,
-    JOY_NW
+#define X(name, str) JOY_##name,
+    JOY_STATE_LIST
+#undef X
+
+    JOY_STATE_COUNT
 };
 
 enum cmd_seq
 {
-    CMD_NONE,
-    CMD_SLIGHT_NNE,
-    CMD_SLIGHT_NEE,
-    CMD_SLIGHT_SEE,
-    CMD_SLIGHT_SSE,
-    CMD_SLIGHT_NNW,
-    CMD_SLIGHT_NWW,
-    CMD_SLIGHT_SWW,
-    CMD_SLIGHT_SSW,
-    CMD_DOUBLE_UP_ZIP,
-    CMD_TSW_W,
-    CMD_TSW_E,
+#define X(name, str) SEQ_##name,
+    SEQ_LIST
+#undef X
+    SEQ_COUNT
 };
 
 /*!

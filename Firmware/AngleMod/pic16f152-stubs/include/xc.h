@@ -61,6 +61,8 @@ struct PORTCbits {
 };
 extern volatile struct PORTCbits PORTCbits;
 
+extern volatile uint8_t IOCAF;
+
 extern volatile uint8_t PORTA;
 extern volatile uint8_t PORTB;
 extern volatile uint8_t PORTC;
@@ -124,5 +126,7 @@ extern volatile uint8_t NVMDATL;
 
 extern volatile uint8_t TX1REG;
 extern volatile uint8_t RC1REG;
+
+extern volatile uint8_t ADRESH;
 
 #endif

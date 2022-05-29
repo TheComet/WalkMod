@@ -22,10 +22,10 @@
  */
 #if defined(CLI_SIM)
 #   undef TX_BUF_SIZE
-#   define TX_BUF_SIZE (1024u * 1024u)
+#   define TX_BUF_SIZE (1024u * 8u)
 
 #   undef TX_RWTYPE
-#   define TX_RWTYPE uint32_t
+#   define TX_RWTYPE uint16_t
 #endif
 
 void uart_init(void);

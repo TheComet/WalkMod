@@ -39,4 +39,7 @@ target_include_directories (cli-sim
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../AngleMod.X/include>)
 target_compile_definitions (cli-sim
 	PRIVATE CLI_SIM)
-target_link_libraries (cli-sim PRIVATE pic16f152-stubs)
+target_link_libraries (cli-sim 
+	PRIVATE
+		pic16f152-stubs
+		$<$<PLATFORM_ID:Windows>:Winmm>)

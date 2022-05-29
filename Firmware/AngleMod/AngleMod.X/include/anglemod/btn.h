@@ -14,6 +14,6 @@ uint8_t btn_pressed_get_and_clear(void);
 uint8_t btn_released_get_and_clear(void);
 uint8_t btn_is_active(void);
 
-void btn_int_isr(void);
+void btn_ioc_isr(void);
 
 #endif	/* BTN_H */

@@ -10,11 +10,14 @@
 
 struct param
 {
-    struct {
-        unsigned normal_mode : 2;  /* 00 = OFF, 01 = clamp, 10 = quantize */
-        unsigned a_angles : 1;
-        unsigned b_angles : 1;
-        unsigned c_angles : 1;
+    union {
+        struct {
+            unsigned normal_mode     : 2;  /* 00 = OFF, 01 = clamp, 10 = quantize */
+            unsigned cardinal_angles : 1;
+            unsigned diagonal_angles : 1;
+            unsigned special_angles  : 8;
+        };
+        uint16_t bits;
     } enable;
 
     struct {

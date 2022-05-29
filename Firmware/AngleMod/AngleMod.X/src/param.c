@@ -40,12 +40,12 @@ void param_load_from_nvm(void)
 void param_set_defaults(void)
 {
     param.enable.normal_mode = 0x01;  /* Clamp mode */
-    param.enable.a_angles = 1;
-    param.enable.b_angles = 1;
-    param.enable.c_angles = 1;
+    param.enable.cardinal_angles = 1;
+    param.enable.diagonal_angles = 1;
+    param.enable.special_angles = 0x1F;
 
-    param.cmd_seq.xythreshold = 85;
-    param.cmd_seq.hysteresis = 10;
+    param.cmd_seq.xythreshold = 42;
+    param.cmd_seq.hysteresis = 30;
 
     param.dac_clamp.xl = 85;
     param.dac_clamp.xh = 171;
