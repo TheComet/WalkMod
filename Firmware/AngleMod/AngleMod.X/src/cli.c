@@ -141,7 +141,7 @@ static void cmd_help(uint8_t argc, char** argv)
         uart_printf(GREENC("\r\n  %s "), cmd->name);
         for (const char* p = cmd->param; *p; ++p)
         {
-            uart_putbytes(p, 1);
+            uart_putc(*p);
 #if defined(CLI_USE_COLOR)
             switch ((isatoz(p[0]) << 1u) | (isatoz(p[1])))
             {

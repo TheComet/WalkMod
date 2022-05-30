@@ -30,7 +30,6 @@
 
 void uart_init(void);
 
-void uart_putbytes(const char* start, uint8_t len);
 void uart_putc(char c);
 void uart_printf(const char* fmt, ...);
 

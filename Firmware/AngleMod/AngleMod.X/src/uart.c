@@ -11,24 +11,13 @@ void uart_init(void)
 {
     /* TODO */
 }
-
-/* -------------------------------------------------------------------------- */
-void uart_putbytes(const char* p, uint8_t len)
-{
-    /* Enabling the TX interrupt will cause the ISR to execute immediately,
-     * so make sure to put data into the buffer before doing so. */
-    while (len--)
-    {
-        while (rb_tx_put_single(p) == 0) {}
-        PIE1bits.TX1IE = 1;
-        p++;
-    }
-}
-
 /* -------------------------------------------------------------------------- */
 void uart_putc(char c)
 {
-    uart_putbytes(&c, 1);
+    /* Enabling the TX interrupt will cause the ISR to execute immediately,
+     * so make sure to put data into the buffer before doing so. */
+    while (rb_tx_put_single(&c) == 0) {}
+    PIE1bits.TX1IE = 1;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -41,10 +30,10 @@ static void uart_put_u8(uint8_t value)
     uint8_t digits = 0x01;  /* This horrible shit saves 0.5% program space */
 
     /* Convert to decimal */
-    buf[0] = '0';
+    buf[2] = '0';
     while (value >= 100) {
         value -= 100;
-        buf[0]++;
+        buf[2]++;
         digits |= 0x02;
     }
     buf[1] = '0';
@@ -54,9 +43,10 @@ static void uart_put_u8(uint8_t value)
         if ((digits & 0x02) == 0)
             digits = 0x02;
     }
-    buf[2] = '0' + (uint8_t)value;
+    buf[0] = '0' + (uint8_t)value;
     
-    uart_putbytes(buf + 3 - digits, digits);
+    while (digits--)
+        uart_putc(buf[digits]);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -74,7 +64,8 @@ void uart_printf(const char* fmt, ...)
             {
                 case 's': {
                     const char* s = va_arg(ap, const char*);
-                    uart_putbytes(s, (uint8_t)strlen(s));
+                    while (*s)
+                        uart_putc(*s++);
                 } break;
                 
                 case 'u': {
