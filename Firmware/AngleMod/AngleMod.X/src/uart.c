@@ -3,9 +3,6 @@
 #include <xc.h>
 #include <stdarg.h>
 
-RB_DEFINE_API(rx, char, RX_BUF_SIZE, RX_RWTYPE)
-RB_DEFINE_API(tx, char, TX_BUF_SIZE, TX_RWTYPE)
-
 /* -------------------------------------------------------------------------- */
 void uart_init(void)
 {
@@ -16,7 +13,7 @@ void uart_putc(char c)
 {
     /* Enabling the TX interrupt will cause the ISR to execute immediately,
      * so make sure to put data into the buffer before doing so. */
-    while (rb_tx_put_single(&c) == 0) {}
+    while (rb_tx_put_single_value(c) == 0) {}
     PIE1bits.TX1IE = 1;
 }
 
@@ -118,5 +115,8 @@ void uart_tx_isr(void)
 void uart_rx_isr(void)
 {
     char c = RC1REG;  /* Read from receive register */
-    rb_rx_put_single(&c);
+    rb_rx_put_single_value(c);
 }
+
+RB_DEFINE_API(rx, char, RX_BUF_SIZE, RX_RWTYPE)
+RB_DEFINE_API(tx, char, TX_BUF_SIZE, TX_RWTYPE)
