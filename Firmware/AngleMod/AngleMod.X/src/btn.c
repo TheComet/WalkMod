@@ -9,7 +9,7 @@ enum state_bits
     RELEASED = 0x02
 };
 
-static volatile enum state_bits state;
+static volatile uint8_t state;
 
 /* -------------------------------------------------------------------------- */
 void btn_init(void)
@@ -20,7 +20,7 @@ void btn_init(void)
 uint8_t btn_pressed_get_and_clear(void)
 {
     uint8_t pressed = (state & PRESSED);
-    state = NONE;
+    state &= ~PRESSED;
     return pressed;
 }
 
@@ -28,7 +28,7 @@ uint8_t btn_pressed_get_and_clear(void)
 uint8_t btn_released_get_and_clear(void)
 {
     uint8_t released = (state & RELEASED);
-    state = NONE;
+    state &= ~RELEASED;
     return released;
 }
 

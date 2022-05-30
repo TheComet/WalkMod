@@ -3,6 +3,7 @@
 #include "anglemod/param.h"
 #include "anglemod/log.h"
 #include "anglemod/joy.h"
+#include "anglemod/dac.h"
 #include <ctype.h>  /* isprint(), isspace() */
 
 #define PROMPT "> "
@@ -40,15 +41,16 @@ static uint8_t cursor_idx = 0;
 static uint8_t history_write_idx = 0;
 static uint8_t history_read_offset = 0;
 
-static enum log_mode log_mode = LOG_NONE;
+static uint8_t log_mode = LOG_NONE;
 
 #define CSI_PARAM_BUF_SIZE 1
 static uint8_t csi_param_buf[CSI_PARAM_BUF_SIZE];
 static uint8_t csi_param_idx = 0;
 
 static const char* arrow_table[] = {
-#define X(name, str) str,
-        SEQ_LIST
+    "none",  /* SEQ_NONE */
+#define X(name, str, x, y) str,
+    SEQ_LIST
 #undef X
 };
 
@@ -56,8 +58,10 @@ void (*cli_putc)(char c) = cli_putc_normal;
 
 static void cmd_help(uint8_t argc, char** argv);
 static void cmd_toggle(uint8_t argc, char** argv);
-static void cmd_thresh(uint8_t argc, char** argv);
-static void cmd_slight(uint8_t argc, char** argv);
+static void cmd_joy(uint8_t argc, char** argv);
+static void cmd_angle(uint8_t argc, char** argv);
+static void cmd_clamp(uint8_t argc, char** argv);
+static void cmd_quantize(uint8_t argc, char** argv);
 static void cmd_log(uint8_t argc, char** argv);
 static void cmd_save(uint8_t argc, char** argv);
 static void cmd_discard(uint8_t argc, char** argv);
@@ -73,12 +77,14 @@ struct cli_cmd {
 static struct cli_cmd commands[] = {
     {"help", "", "Print help", cmd_help},
     {"toggle", "<index>", "Enable/disable different modes", cmd_toggle},
-    {"threshold", "<xy value> [hysteresis]", "Configure how command inputs are detected", cmd_thresh},
-    {"slight", "<index> <angle|<x> <y>>", "Configure slight angles", cmd_slight},
-    {"log", "<adc|cmd|dac>", "Log values in real-time", cmd_log},
+    {"joy", "<xy value> [hysteresis]", "Configure how the joystick is converted into directions", cmd_joy},
+    {"angle", "<index> <angle|<x> <y>>", "Configure angles for command inputs", cmd_angle},
+    {"clamp", "<x> <y>", "Set the clamp threshold for normal mode", cmd_clamp},
+    {"quantize", "", "", cmd_quantize},
     {"save", "", "Save changes to non-volatile memory", cmd_save},
     {"load", "", "Load values from non-volatile memory, discarding any changes", cmd_discard},
     {"defaults", "", "Set default values", cmd_defaults},
+    {"log", "<adc|cmd|dac>", "Log values in real-time", cmd_log},
     {NULL}
 };
 
@@ -95,9 +101,15 @@ static void clear_from_cursor_until_end(void)
 }
 
 /* -------------------------------------------------------------------------- */
-static void newline_and_clear(void)
+static uint8_t u8_atoi(const char* s)
 {
-    uart_puts("\r\n\x1b[K");
+    uint8_t result = *s - '0';
+    while (*++s)
+    {
+        result *= 10;
+        result += *s - '0';
+    }
+    return result;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -208,7 +220,7 @@ unknown_argument:
 }
 
 /* -------------------------------------------------------------------------- */
-static void cmd_thresh(uint8_t argc, char** argv)
+static void cmd_joy(uint8_t argc, char** argv)
 {
     struct param* p = param_get();
 
@@ -220,109 +232,55 @@ static void cmd_thresh(uint8_t argc, char** argv)
 }
 
 /* -------------------------------------------------------------------------- */
-static void cmd_slight(uint8_t argc, char** argv)
+static void cmd_angle(uint8_t argc, char** argv)
 {
     static const char* fmt = "\r\n  " PAREN1("%c%u", YELLOW) " %s + x:  " GREENC("%u") "," GREENC("%u") " " PAREN1("%u" DEGREES, CYAN);
     
     struct param* p = param_get();
 
+    if (argc > 2 && 
+        argv[0][0] >= 'a' && argv[0][0] <= 'c' && 
+        argv[0][1] >= '1' && argv[0][1] <= '8')
+    {
+        uint8_t i = (uint8_t)((argv[0][0] - 'a') << 3) + (argv[0][1] - '1');
+        p->angles[i].x = u8_atoi(argv[1]);
+        p->angles[i].y = u8_atoi(argv[2]);
+    }
+
+    /* NOTE: We start at index 1 because index 0 is SEQ_NONE */
     uart_puts(MAGENTAC("\r\nCardinal Angles:"));
     for (uint8_t i = 1; i <= 8; ++i)
-        uart_printf(fmt, 'a', i, arrow_table[i-1], 255, 255, 45);
+        uart_printf(fmt, 'a', i, arrow_table[i],
+            p->angles[i-1].x, p->angles[i-1].y, 45);
 
     uart_puts(MAGENTAC("\r\nDiagonal Angles:"));
     for (uint8_t i = 1; i <= 8; ++i)
-        uart_printf(fmt, 'b', i, arrow_table[i+7], 255, 255, 45);
+        uart_printf(fmt, 'b', i, arrow_table[i+8],
+            p->angles[i+7].x, p->angles[i+7].y, 45);
 
     uart_puts(MAGENTAC("\r\nSpecial Angles:"));
     for (uint8_t i = 1; i <= 8; ++i)
-        uart_printf(fmt, 'c', i, arrow_table[i+15], 255, 255, 45);
+        uart_printf(fmt, 'c', i, arrow_table[i+16],
+            p->angles[i+15].x, p->angles[i+15].y, 45);
 }
 
 /* -------------------------------------------------------------------------- */
-void log_adc(void)
+static void cmd_clamp(uint8_t argc, char** argv)
 {
-    uint8_t i;
-
-    if (log_mode != LOG_ADC)
-        return;
-    
-    for (i = 0; i != 2; ++i)
-        newline_and_clear();
-    uart_printf("\x1b[AJoy X: " CYANC("%u") "\r\nJoy Y: " CYANC("%u") "\x1b[2A",
-        joy_x(), 
-        joy_y());
-    set_cursor_h(cursor_idx);
-    clear_from_cursor_until_end();
-}
-void log_cmd(enum joy_state states[3])
-{
-    uint8_t i;
-    static const char* joy_state_table[] = {
-#define X(name, str) str,
-        JOY_STATE_LIST
-#undef X
-    };
-
-    if (log_mode != LOG_CMD)
-        return;
-
-    for (i = 0; i != 3; ++i)
-        newline_and_clear();
-    uart_printf("\x1b[2A2: %s\r\n1: %s\r\n0: %s\x1b[3A",
-        joy_state_table[states[2]],
-        joy_state_table[states[1]],
-        joy_state_table[states[0]]);
-    set_cursor_h(cursor_idx);
-    clear_from_cursor_until_end();
-}
-void log_seq(enum cmd_seq seq)
-{
-    if (log_mode != LOG_SEQ)
-        return;
-
-    newline_and_clear();
-    if (seq == SEQ_NONE)
-        uart_printf("%s\x1b[A", arrow_table[SEQ_NONE]);
-    else
-        uart_printf("%s + x\x1b[A", arrow_table[seq]);
-    set_cursor_h(cursor_idx);
-    clear_from_cursor_until_end();
-}
-void log_dac(void)
-{
-    
-}
-static void cmd_log(uint8_t argc, char** argv)
-{
-    struct category {
-        const char* name;
-        const char* desc;
-    };
-    static const struct category categories[] = {
-#define X(name, str, desc) {str, desc},
-        LOG_LIST
-#undef X
-    };
-    
-    if (argc == 0)
+    if (argc < 2)
     {
-        uart_puts(MAGENTA("\r\nAvailable log categories:"));
-        for (uint8_t i = 0; i != LOG_COUNT; ++i)
-            uart_printf("\r\n  " GREENC("%s") "  %s", categories[i].name, categories[i].desc);
+        uart_puts(REDC("Error: ") "Expected <x> and <y> arguments");
+        return;
     }
-    else
-    {
-        for (uint8_t i = 0; i != LOG_COUNT; ++i)
-            if (strcmp(argv[0], categories[i].name) == 0)
-            {
-                log_mode = (enum log_mode)i;
-                if (log_mode == LOG_NONE)
-                    uart_puts("\r\n\x1b[K\r\n\x1b[K\x1b[2A");
-                return;
-            }
-        uart_printf(REDC("\r\nError: ") "Unknown category '%s'", argv[0]);
-    }
+    dac_set_clamp_threshold(
+        u8_atoi(argv[0]),
+        u8_atoi(argv[1]));
+}
+
+/* -------------------------------------------------------------------------- */
+static void cmd_quantize(uint8_t argc, char** argv)
+{
+    
 }
 
 /* -------------------------------------------------------------------------- */
@@ -344,6 +302,151 @@ static void cmd_defaults(uint8_t argc, char** argv)
 {
     param_set_defaults();
     uart_puts("\r\nDefault values set\r\n" CYANC("Note: ") "Use " GREENC("save") " if you want to keep default values");
+}
+
+/* -------------------------------------------------------------------------- */
+void log_adc(void)
+{
+    if (!(log_mode & LOG_ADC))
+        return;
+
+    uart_printf("\r\n" CYANC("X: ") "%u" "\x1b[K\r\n" CYANC("Y: ") "%u\x1b[K\x1b[2A",
+        joy_x(), 
+        joy_y());
+
+    /* Restore cursor to where it was before printing our log message */
+    set_cursor_h(cursor_idx);
+}
+void log_joy(enum joy_state states[3])
+{
+    static const char* joy_state_table[] = {
+#define X(name, str) str,
+        JOY_STATE_LIST
+#undef X
+    };
+
+    if (!(log_mode & LOG_JOY))
+        return;
+
+    /* Skip over previous log messages if they're enabled */
+    if (log_mode & LOG_ADC)
+        uart_puts("\n\n");
+
+    uart_printf("\r\n" YELLOWC("2: ") "%s\x1b[K\r\n" YELLOWC("1: ") "%s\x1b[K\r\n" YELLOWC("0: ") "%s\x1b[K\x1b[3A",
+        joy_state_table[states[2]],
+        joy_state_table[states[1]],
+        joy_state_table[states[0]]);
+
+    /* Restore cursor to where it was before printing our log message */
+    if (log_mode & LOG_ADC)
+        uart_puts("\x1b[2A");
+    set_cursor_h(cursor_idx);
+}
+void log_seq(enum cmd_seq seq)
+{
+    uint8_t i;
+    static enum cmd_seq seq_history[3];
+
+    if (!(log_mode & LOG_SEQ))
+        return;
+
+    /* Skip over previous log messages if they're enabled */
+    if (log_mode & LOG_ADC)
+        uart_puts("\n\n");
+    if (log_mode & LOG_JOY)
+        uart_puts("\n\n\n");
+
+    seq_history[0] = seq_history[1];
+    seq_history[1] = seq_history[2];
+    seq_history[2] = seq;
+
+    i = 3;
+    while (i--)
+    {
+        enum cmd_seq s = seq_history[i];
+        uart_printf("\r\n" GREENC("%u: ") "%s%s\x1b[K", i, arrow_table[s], s ? " + x" : "");;
+    }
+    uart_puts("\x1b[3A");
+
+    /* Restore cursor to where it was before printing our log message */
+    if (log_mode & LOG_JOY)
+        uart_puts("\x1b[3A");
+    if (log_mode & LOG_ADC)
+        uart_puts("\x1b[2A");
+    set_cursor_h(cursor_idx);
+}
+void log_dac(uint8_t swx, uint8_t swy, const uint8_t* dac01_write_buf)
+{
+    if (!(log_mode & LOG_DAC))
+        return;
+
+    /* Skip over previous log messages if they're enabled */
+    if (log_mode & LOG_ADC)
+        uart_puts("\n\n");
+    if (log_mode & LOG_JOY)
+        uart_puts("\n\n\n");
+    if (log_mode & LOG_SEQ)
+        uart_puts("\n\n\n");
+
+    uart_puts("\r\n" BLUEC("DAC0: "));
+    if (swx)
+    {
+        uint8_t value = (uint8_t)(dac01_write_buf[1] << 4) | (dac01_write_buf[2] >> 4);
+        uart_printf("%u", value);
+    }
+    else
+        uart_puts("--");
+    uart_puts("\x1b[K\r\n" BLUEC("DAC1: "));    
+    if (swy)
+    {
+        uint8_t value = (uint8_t)(dac01_write_buf[4] << 4) | (dac01_write_buf[5] >> 4);
+        uart_printf("%u", value);
+    }
+    else
+        uart_puts("--");
+    uart_puts("\x1b[K\x1b[2A");
+
+    /* Restore cursor to where it was before printing our log message */
+    if (log_mode & LOG_SEQ)
+        uart_puts("\x1b[3A");
+    if (log_mode & LOG_JOY)
+        uart_puts("\x1b[3A");
+    if (log_mode & LOG_ADC)
+        uart_puts("\x1b[2A");
+    set_cursor_h(cursor_idx);
+}
+static void cmd_log(uint8_t argc, char** argv)
+{
+    struct category {
+        const char* name;
+        const char* desc;
+        uint8_t value;
+    };
+    static const struct category categories[] = {
+#define X(name, value, str, desc) {str, desc, value},
+        LOG_LIST
+#undef X
+    };
+    
+    if (argc == 0)
+    {
+        uart_puts(MAGENTA("\r\nAvailable log categories:"));
+        for (uint8_t i = 0; i != LOG_COUNT; ++i)
+            uart_printf("\r\n  " GREENC("%s") "  %s", categories[i].name, categories[i].desc);
+    }
+    else
+    {
+        for (uint8_t i = 0; i != LOG_COUNT; ++i)
+            if (strcmp(argv[0], categories[i].name) == 0)
+            {
+                if (i < LOG_MASK_START)
+                    log_mode = categories[i].value;
+                else
+                    log_mode ^= categories[i].value;
+                return;
+            }
+        uart_printf(REDC("\r\nError: ") "Unknown category '%s'", argv[0]);
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -374,8 +477,8 @@ static uint8_t split_args(char* s, char** argv, uint8_t maxsplit)
 /* -------------------------------------------------------------------------- */
 static void execute_current_line(void)
 {
-    char* argv[3];
-    uint8_t argc = split_args(line, argv, 3);
+    char* argv[4];
+    uint8_t argc = split_args(line, argv, 4);
     for (const struct cli_cmd* cmd = commands; cmd->name; ++cmd)
     {
         if (strcmp(argv[0], cmd->name))
@@ -584,8 +687,7 @@ static void cli_putc_normal(char c)
         cursor_idx = 0;
         line_len = 0;
         line[0] = '\0';
-        uart_puts("\r\n" PROMPT);
-        set_cursor_h(0);
+        uart_puts("\r\n" PROMPT "\x1b[K");
 
         break;
 

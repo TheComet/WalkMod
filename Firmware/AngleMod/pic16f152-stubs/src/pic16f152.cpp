@@ -49,4 +49,8 @@ volatile uint8_t NVMDATL;
 volatile uint8_t TX1REG;
 volatile uint8_t RC1REG;
 
+volatile struct SSP1STATbits SSP1STATbits;
+volatile uint8_t SSP1BUF;
+volatile uint8_t SSP1CON1;
+
 volatile uint8_t ADRESH;

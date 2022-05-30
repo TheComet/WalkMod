@@ -11,7 +11,7 @@ static uint8_t thresh1_h = 0;
 static uint8_t thresh2_l = 0;
 static uint8_t thresh2_h = 0;
 
-static enum joy_state sequence_lookup[][3] = {
+static enum joy_state match_table[][3] = {
     /* Cardinal angles */
     {JOY_NEUTRAL, JOY_N, JOY_NE},
     {JOY_NEUTRAL, JOY_E, JOY_NE},
@@ -61,7 +61,7 @@ static void push_state(enum joy_state state)
     state_history[1] = state_history[2];
     state_history[2] = state;
     
-    log_cmd(state_history);
+    log_joy(state_history);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -128,11 +128,14 @@ void cmd_seq_push_joy_angle(uint8_t x, uint8_t y)
 /* -------------------------------------------------------------------------- */
 static enum cmd_seq determine_command(void)
 {
+    /* Note that match_table is missing the SEQ_NONE entry at the beginning,
+     * which means that the sequences in the table are off by one when compared
+     * to the cmd_seq enum. 
+     */
     uint8_t i, s = SEQ_COUNT - 1;
     const struct param* p = param_get();
     while (s--)
     {
-
         /* Skip matching if the angles are disabled */
         if (s < 8)
         {
@@ -146,14 +149,14 @@ static enum cmd_seq determine_command(void)
         }
         else
         {
-            uint8_t mask = (1 << (s - 16));
+            uint8_t mask = (uint8_t)(1u << (s - 16u));
             if (!(p->enable.special_angles & mask))
                 continue;
         }
 
         for (i = 0; i != 3; ++i)
         {
-            if (sequence_lookup[s][i] && sequence_lookup[s][i] != state_history[i])
+            if (match_table[s][i] && match_table[s][i] != state_history[i])
                 goto unmatched;
         }
 

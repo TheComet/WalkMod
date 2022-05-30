@@ -127,6 +127,13 @@ extern volatile uint8_t NVMDATL;
 extern volatile uint8_t TX1REG;
 extern volatile uint8_t RC1REG;
 
+struct SSP1STATbits {
+	unsigned BF : 1;
+};
+extern volatile struct SSP1STATbits SSP1STATbits;
+extern volatile uint8_t SSP1BUF;
+extern volatile uint8_t SSP1CON1;
+
 extern volatile uint8_t ADRESH;
 
 #endif

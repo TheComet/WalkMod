@@ -41,17 +41,18 @@ void uart_putc(char c)
 /* -------------------------------------------------------------------------- */
 void uart_putu(uint8_t value)
 {
-    char buf[3];
-    uint8_t d;
+    char buf[4] = {'0', '0', '0'};
 
     /* Convert to decimal */
-    for (d = 0; value >= 100; ++d)
+    while (value >= 100) {
         value -= 100;
-    buf[0] = '0' + d;
-    for (d = 0; value >= 10; ++d)
+        buf[0]++;
+    }
+    while (value >= 10) {
         value -= 10;
-    buf[1] = '0' + d;
-    buf[2] = '0' + value;
+        buf[1]++;
+    }
+    buf[2] = '0' + (uint8_t)value;
 
     /* Write */
     if (buf[0] != '0')

@@ -24,6 +24,7 @@ set (PIC16_HEADERS
 	"../AngleMod.X/include/anglemod/dac.h"
 	"../AngleMod.X/include/anglemod/gpio.h"
 	"../AngleMod.X/include/anglemod/joy.h"
+	"../AngleMod.X/include/anglemod/log.h"
 	"../AngleMod.X/include/anglemod/osc.h"
 	"../AngleMod.X/include/anglemod/param.h"
 	"../AngleMod.X/include/anglemod/rb.h"

@@ -15,6 +15,7 @@ struct param
             unsigned normal_mode     : 2;  /* 00 = OFF, 01 = clamp, 10 = quantize */
             unsigned cardinal_angles : 1;
             unsigned diagonal_angles : 1;
+            unsigned _padding        : 4;
             unsigned special_angles  : 8;
         };
         uint16_t bits;
@@ -31,6 +32,10 @@ struct param
         uint8_t yl;
         uint8_t yh;
     } dac_clamp;
+
+    struct {
+        uint8_t x, y;
+    } angles[24];
 };
 
 void param_load_from_nvm(void);

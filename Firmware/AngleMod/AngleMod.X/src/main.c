@@ -73,6 +73,10 @@ void pic16_process_events(void)
             dac_override_clamp(joy_x(), joy_y());
             joy_set_fast_sampling_mode();
         }
+        else
+        {
+            dac_override_sequence(active_seq);
+        }
     }
     else if (btn_released_get_and_clear())
     {
