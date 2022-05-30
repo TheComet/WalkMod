@@ -13,12 +13,12 @@ struct param
     union {
         struct {
             unsigned normal_mode     : 2;  /* 00 = OFF, 01 = clamp, 10 = quantize */
-            unsigned cardinal_angles : 1;
-            unsigned diagonal_angles : 1;
-            unsigned _padding        : 4;
+            unsigned _padding        : 6;
+            unsigned cardinal_angles : 8;
+            unsigned diagonal_angles : 8;
             unsigned special_angles  : 8;
         };
-        uint16_t bits;
+        uint8_t bytes[4];
     } enable;
 
     struct {

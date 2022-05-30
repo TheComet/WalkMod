@@ -9,83 +9,77 @@ RB_DEFINE_API(tx, char, TX_BUF_SIZE, TX_RWTYPE)
 /* -------------------------------------------------------------------------- */
 void uart_init(void)
 {
-    
+    /* TODO */
 }
 
 /* -------------------------------------------------------------------------- */
-void uart_putbytes(const char* start, uint8_t len)
+void uart_putbytes(const char* p, uint8_t len)
 {
-    const char* end = start + len;
-    
-    /* Enabling the TX interrupt will cause the interrupt to execute immediately,
+    /* Enabling the TX interrupt will cause the ISR to execute immediately,
      * so make sure to put data into the buffer before doing so. */
-    start += rb_tx_put(start, len);
-    PIE1bits.TX1IE = 1;
-    
-    /* Assuming the bytes are transmitted much slower than we are able to put
-     * bytes into the buffer, it's more efficient to insert them one by one
-     * because we know that the buffer will be full */
-    while (start != end)
-        start += rb_tx_put_single(start);
+    while (len--)
+    {
+        while (rb_tx_put_single(p) == 0) {}
+        PIE1bits.TX1IE = 1;
+        p++;
+    }
 }
 
 /* -------------------------------------------------------------------------- */
 void uart_putc(char c)
 {
-    while (rb_tx_put_single(&c) == 0)
-    {}
-    
-    PIE1bits.TX1IE = 1;
+    uart_putbytes(&c, 1);
 }
 
 /* -------------------------------------------------------------------------- */
-void uart_putu(uint8_t value)
+/*!
+ * @brief Converts a u8 integer into a decimal string and sends it over uart
+ */
+static void uart_put_u8(uint8_t value)
 {
-    char buf[4] = {'0', '0', '0'};
+    static char buf[3];
+    uint8_t digits = 0x01;  /* This horrible shit saves 0.5% program space */
 
     /* Convert to decimal */
+    buf[0] = '0';
     while (value >= 100) {
         value -= 100;
         buf[0]++;
+        digits |= 0x02;
     }
+    buf[1] = '0';
     while (value >= 10) {
         value -= 10;
         buf[1]++;
+        if ((digits & 0x02) == 0)
+            digits = 0x02;
     }
     buf[2] = '0' + (uint8_t)value;
-
-    /* Write */
-    if (buf[0] != '0')
-        uart_putbytes(buf, 3);
-    else if (buf[1] != '0')
-        uart_putbytes(buf + 1, 2);
-    else
-        uart_putbytes(buf + 2, 1);
+    
+    uart_putbytes(buf + 3 - digits, digits);
 }
 
 /* -------------------------------------------------------------------------- */
 void uart_printf(const char* fmt, ...)
 {
-    const char* end;
     va_list ap;
     va_start(ap, fmt);
     
-    for (end = fmt; *end; ++end)
+    for (; *fmt; ++fmt)
     {
-        if (*end == '%')
+        if (*fmt == '%')
         {
-            uart_putbytes(fmt, (uint8_t)(end - fmt));
-            ++end;
-            switch (*end)
+            fmt++;
+            switch (*fmt)
             {
                 case 's': {
                     const char* s = va_arg(ap, const char*);
-                    uart_puts(s);
+                    uart_putbytes(s, (uint8_t)strlen(s));
                 } break;
                 
                 case 'u': {
                     uint8_t value = va_arg(ap, uint8_t);
-                    uart_putu(value);
+                    uart_put_u8(value);
                 } break;
                 
                 case 'c': {
@@ -101,14 +95,11 @@ void uart_printf(const char* fmt, ...)
                     return;
                 }
             }
-            fmt = end + 1;
         }
-    }
-    
-    {
-        uint8_t len = (uint8_t)(end - fmt);
-        if (len > 0)
-            uart_putbytes(fmt, len);
+        else
+        {
+            uart_putc(*fmt);
+        }
     }
     
     va_end(ap);
@@ -119,14 +110,22 @@ void uart_tx_isr(void)
 {
     char c;
     if (rb_tx_take_single(&c))
-        TX1REG = c;
+        TX1REG = c;  /* Write to transmit register */
     else
+    {
+        /* Last byte was queued, disable interrupt.
+         * The TX1IF flag functions a bit differently than the other interrupt
+         * flags, namely, it is read-only, and it is only ever clear when
+         * the transmit queue is full. If we don't disable the interrupt,
+         * then we will be stuck in an endless loop of serving this ISR for
+         * no reason. */
         PIE1bits.TX1IE = 0;
+    }
 }
 
 /* -------------------------------------------------------------------------- */
 void uart_rx_isr(void)
 {
-    char c = RC1REG;
+    char c = RC1REG;  /* Read from receive register */
     rb_rx_put_single(&c);
 }

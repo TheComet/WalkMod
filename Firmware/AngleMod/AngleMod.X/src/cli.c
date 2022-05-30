@@ -5,10 +5,12 @@
 #include "anglemod/joy.h"
 #include "anglemod/dac.h"
 #include <ctype.h>  /* isprint(), isspace() */
+#include <assert.h>
 
 #define PROMPT "> "
 #define DEGREES "\xC2\xB0"
 
+#if defined (CLI_USE_COLOR)
 #define CLEAR(x)   "\x1b[0m" x
 #define RED(x)     "\x1b[1;31m" x
 #define GREEN(x)   "\x1b[1;32m" x
@@ -24,6 +26,23 @@
 #define MAGENTAC(x) "\x1b[1;35m" x "\x1b[0m"
 #define CYANC(x)    "\x1b[1;36m" x "\x1b[0m"
 #define WHITEC(x)   "\x1b[1;37m" x "\x1b[0m"
+#else
+#define CLEAR(x) x
+#define RED(x) x
+#define GREEN(x) x
+#define YELLOW(x) x
+#define BLUE(x) x
+#define MAGENTA(x) x
+#define CYAN(x) x
+#define WHITE(x) x
+#define REDC(x) x
+#define GREENC(x) x
+#define YELLOWC(x) x
+#define BLUEC(x) x
+#define MAGENTAC(x) x
+#define CYANC(x) x
+#define WHITEC(x) x
+#endif
 
 #define PAREN1(x, color) "(" color(x) CLEAR(")")
 #define PAREN2(x1, x2, color) "(" color(x1) CLEAR(",") color(x2) CLEAR(")")
@@ -41,15 +60,15 @@ static uint8_t cursor_idx = 0;
 static uint8_t history_write_idx = 0;
 static uint8_t history_read_offset = 0;
 
-static uint8_t log_mode = LOG_NONE;
+static uint8_t log_category = 0;
 
 #define CSI_PARAM_BUF_SIZE 1
 static uint8_t csi_param_buf[CSI_PARAM_BUF_SIZE];
 static uint8_t csi_param_idx = 0;
 
-static const char* arrow_table[] = {
+static const char* sequence_name_table[] = {
     "none",  /* SEQ_NONE */
-#define X(name, str, x, y) str,
+#define X(name, str, x, y) str " + x",
     SEQ_LIST
 #undef X
 };
@@ -84,7 +103,7 @@ static struct cli_cmd commands[] = {
     {"save", "", "Save changes to non-volatile memory", cmd_save},
     {"load", "", "Load values from non-volatile memory, discarding any changes", cmd_discard},
     {"defaults", "", "Set default values", cmd_defaults},
-    {"log", "<adc|cmd|dac>", "Log values in real-time", cmd_log},
+    {"log", "<all|off|adc|joy|seq|dac>", "Log values in real-time", cmd_log},
     {NULL}
 };
 
@@ -97,7 +116,7 @@ static void set_cursor_h(uint8_t idx)
 /* -------------------------------------------------------------------------- */
 static void clear_from_cursor_until_end(void)
 {
-    uart_puts("\x1b[K");
+    uart_printf("\x1b[K");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -116,34 +135,24 @@ static uint8_t u8_atoi(const char* s)
 #define isatoz(c) (c >= 'a' && c <= 'z')
 static void cmd_help(uint8_t argc, char** argv)
 {
-    uart_puts(WHITE("\r\nAvailable Commands:"));
+    uart_printf(MAGENTA("\r\nAvailable Commands:"));
     for (const struct cli_cmd* cmd = commands; cmd->name; ++cmd)
     {
-        uart_printf(GREEN("\r\n  %s "), cmd->name);
-
-        if (cmd->param[0])
+        uart_printf(GREENC("\r\n  %s "), cmd->name);
+        for (const char* p = cmd->param; *p; ++p)
         {
-            const char* param_start = cmd->param;
-            const char* param_end = cmd->param;
-            for (; *param_end; ++param_end)
+            uart_putbytes(p, 1);
+#if defined(CLI_USE_COLOR)
+            switch ((isatoz(p[0]) << 1u) | (isatoz(p[1])))
             {
-                switch ((isatoz(*param_start) << 1u) | isatoz(*param_end))
-                {
-                case 1:  /* Transition from '<' to 'a' */
-                    uart_puts(CLEAR(""));
-                    uart_putbytes(param_start, (uint8_t)(param_end - param_start));
-                    param_start = param_end;
-                    break;
-
-                case 2:  /* Transition from 'a' to '>' */
-                    uart_puts(YELLOW(""));
-                    uart_putbytes(param_start, (uint8_t)(param_end - param_start));
-                    param_start = param_end;
-                    break;
-                }
+            case 1:  /* Transition from '<' to 'a' */
+                uart_printf(YELLOW(""));
+                break;
+            case 2:  /* Transition from 'a' to '>' */
+                uart_printf(CLEAR(""));
+                break;
             }
-            uart_puts(CLEAR(""));
-            uart_putbytes(param_start, (uint8_t)(param_end - param_start));
+#endif
         }
 
         uart_printf(CLEAR("\r\n    %s"), cmd->help);
@@ -151,72 +160,75 @@ static void cmd_help(uint8_t argc, char** argv)
 }
 
 /* -------------------------------------------------------------------------- */
-static void print_toggle_states()
+static void print_angles_and_toggle_states()
 {
     const struct param* p = param_get();
-
-    static const char* fmt1 = "\r\n" PAREN1("%u", YELLOW) "  %s : " "\x1B[1;3%cm%s\x1B[0m";
-    static const char* fmt2 = "\r\n" PAREN1("c%u", YELLOW) " Special Angle c%u : " "\x1B[1;3%cm%s\x1B[0m";
-    static const char* mode_name_table[] = {
-        "Normal Mode     ",
-        "Cardinal Angles ",
-        "Diagonal Angles ",
+    
+    static const char* category_name_table[] = {
+        "Cardinal Angles",
+        "Diagonal Angles",
+        "Special Angles"
     };
-
-    uart_printf(fmt1, 1, mode_name_table[0],
-        p->enable.normal_mode == 0 ? '1' : '2',
-        p->enable.normal_mode == 0 ? "Off" : p->enable.normal_mode == 1 ? "Clamp" : "Quantize");
-
-    for (uint8_t i = 1; i != 3; ++i)
+    
+    /* NOTE: We're off by 1 here, because SEQ_NONE is at index 0 */
+    for (uint8_t i = 0; i != SEQ_COUNT - 1; ++i)
     {
-        uint8_t enabled = (uint8_t)(p->enable.bits & (2u << i));
-        uart_printf(fmt1, i+1, mode_name_table[i],
-            enabled ? '2' : '1',
-            enabled ? "On" : "Off");
-    }
-
-    for (uint8_t i = 0; i != 8; ++i)
-    {
-        uint8_t enabled = (uint8_t)(p->enable.special_angles & (1u << i));
-        uart_printf(fmt2, i+1, i+1,
-            enabled ? '2' : '1',
-            enabled ? "On" : "Off");
+        uint8_t cat_idx = i >> 3;
+        uint8_t item_idx = i & 0x07;
+        if (item_idx == 0)
+            uart_printf(MAGENTAC("\r\n%s:"), category_name_table[cat_idx]);
+        uart_printf("\r\n  (\x1b[1;3%cm%c%u\x1b[0m) %s :  " YELLOWC("%u") "," YELLOWC("%u") " " PAREN1("%u" DEGREES, CYAN),
+                (p->enable.bytes[cat_idx+1] & (1 << item_idx)) ? '2' : '1',
+                'b' + cat_idx,
+                item_idx + 1,
+                sequence_name_table[i+1],
+                p->angles[i].x, p->angles[i].y,
+                0);
     }
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_toggle(uint8_t argc, char** argv)
 {
+    uint8_t do_print = 1;
     struct param* p = param_get();
 
-    if (argc > 0)
+    while (argc--)
     {
-        switch (*argv[0])
+        uint8_t cat_idx = argv[0][0] - 'a';
+        uint8_t item_idx = argv[0][1] ? argv[0][1] - '1' : 0;
+        uint8_t mask = argv[0][1] ? (uint8_t)(1 << item_idx) : 0xFF;
+        if (cat_idx >= 4 || item_idx >= 8)
         {
-        case '1':
+            uart_printf(REDC("\r\nError: ") "unknown category/index");
+            do_print = 0;
+            continue;
+        }
+
+        if (cat_idx == 0)
+        {
             p->enable.normal_mode++;
             if (p->enable.normal_mode > 2)
                 p->enable.normal_mode = 0;
-            break;
-        case '2':
-            p->enable.cardinal_angles = ~p->enable.cardinal_angles;
-            break;
-        case '3':
-            p->enable.diagonal_angles = ~p->enable.diagonal_angles;
-            break;
-        case 'c':
-            if (argv[0][1] < '1' || argv[0][1] > '8')
-                goto unknown_argument;
-            p->enable.special_angles ^= 1 << (argv[0][1] - '1');
-            break;
         }
+        else
+        {
+            p->enable.bytes[cat_idx] ^= mask;
+        }
+
+        argv++;
     }
 
-    print_toggle_states();
-    return;
+    if (do_print)
+    {
+        uart_printf(MAGENTAC("\r\nNormal Mode:"));
+        uart_printf("\r\n  (\x1b[1;3%cma1\x1b[0m) When no Command is Detected : \x1b[1;3%cm%s\x1b[0m",
+            p->enable.normal_mode == 0 ? '1' : '2',
+            p->enable.normal_mode == 0 ? '1' : '2',
+            p->enable.normal_mode == 0 ? "Do Nothing" : p->enable.normal_mode == 1 ? "Clamp" : "Quantize");
 
-unknown_argument:
-    uart_printf(REDC("\r\nError: ") "unknown index '%s'", argv[0]);
+        print_angles_and_toggle_states();
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -234,34 +246,18 @@ static void cmd_joy(uint8_t argc, char** argv)
 /* -------------------------------------------------------------------------- */
 static void cmd_angle(uint8_t argc, char** argv)
 {
-    static const char* fmt = "\r\n  " PAREN1("%c%u", YELLOW) " %s + x:  " GREENC("%u") "," GREENC("%u") " " PAREN1("%u" DEGREES, CYAN);
-    
     struct param* p = param_get();
 
     if (argc > 2 && 
-        argv[0][0] >= 'a' && argv[0][0] <= 'c' && 
+        argv[0][0] >= 'b' && argv[0][0] <= 'd' && 
         argv[0][1] >= '1' && argv[0][1] <= '8')
     {
-        uint8_t i = (uint8_t)((argv[0][0] - 'a') << 3) + (argv[0][1] - '1');
+        uint8_t i = (uint8_t)((argv[0][0] - 'b') << 3) + (argv[0][1] - '1');
         p->angles[i].x = u8_atoi(argv[1]);
         p->angles[i].y = u8_atoi(argv[2]);
     }
 
-    /* NOTE: We start at index 1 because index 0 is SEQ_NONE */
-    uart_puts(MAGENTAC("\r\nCardinal Angles:"));
-    for (uint8_t i = 1; i <= 8; ++i)
-        uart_printf(fmt, 'a', i, arrow_table[i],
-            p->angles[i-1].x, p->angles[i-1].y, 45);
-
-    uart_puts(MAGENTAC("\r\nDiagonal Angles:"));
-    for (uint8_t i = 1; i <= 8; ++i)
-        uart_printf(fmt, 'b', i, arrow_table[i+8],
-            p->angles[i+7].x, p->angles[i+7].y, 45);
-
-    uart_puts(MAGENTAC("\r\nSpecial Angles:"));
-    for (uint8_t i = 1; i <= 8; ++i)
-        uart_printf(fmt, 'c', i, arrow_table[i+16],
-            p->angles[i+15].x, p->angles[i+15].y, 45);
+    print_angles_and_toggle_states();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -269,7 +265,7 @@ static void cmd_clamp(uint8_t argc, char** argv)
 {
     if (argc < 2)
     {
-        uart_puts(REDC("Error: ") "Expected <x> and <y> arguments");
+        uart_printf(REDC("Error: ") "Expected <x> and <y> arguments");
         return;
     }
     dac_set_clamp_threshold(
@@ -287,27 +283,52 @@ static void cmd_quantize(uint8_t argc, char** argv)
 static void cmd_save(uint8_t argc, char** argv)
 {
     param_save_to_nvm();
-    uart_puts("\r\nValues written to NVM");
+    uart_printf("\r\nValues written to NVM");
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_discard(uint8_t argc, char** argv)
 {
     param_load_from_nvm();
-    uart_puts("\r\nValues loaded from NVM");
+    uart_printf("\r\nValues loaded from NVM");
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_defaults(uint8_t argc, char** argv)
 {
     param_set_defaults();
-    uart_puts("\r\nDefault values set\r\n" CYANC("Note: ") "Use " GREENC("save") " if you want to keep default values");
+    uart_printf("\r\nDefault values set\r\n" CYANC("Note: ") "Use " GREENC("save") " if you want to keep default values");
+}
+
+/* -------------------------------------------------------------------------- */
+static uint8_t log_lines_per_category[] = {
+    2,          /* ADC prints 2 lines */
+    2 + 3,      /* joy prints 3 lines */
+    2 + 3 + 3,  /* seq prints 3 lines */
+};
+static void log_skip_other_log_outputs(enum log_category category)
+{
+#if defined(CLI_SIM)
+    assert(category >= LOG_JOY && category <= LOG_DAC);
+#endif
+    uint8_t l = log_lines_per_category[category - LOG_JOY];
+    while (l--)
+        uart_putc('\n');
+}
+static void log_unskip_other_log_outputs(enum log_category category)
+{
+#if defined(CLI_SIM)
+    assert(category >= LOG_JOY && category <= LOG_DAC);
+#endif
+    uint8_t l = log_lines_per_category[category - LOG_JOY];
+    while (l--)
+        uart_printf("\x1b[A");
 }
 
 /* -------------------------------------------------------------------------- */
 void log_adc(void)
 {
-    if (!(log_mode & LOG_ADC))
+    if (!(log_category & LOG_ADC_MASK))
         return;
 
     uart_printf("\r\n" CYANC("X: ") "%u" "\x1b[K\r\n" CYANC("Y: ") "%u\x1b[K\x1b[2A",
@@ -325,12 +346,11 @@ void log_joy(enum joy_state states[3])
 #undef X
     };
 
-    if (!(log_mode & LOG_JOY))
+    if (!(log_category & LOG_JOY_MASK))
         return;
 
     /* Skip over previous log messages if they're enabled */
-    if (log_mode & LOG_ADC)
-        uart_puts("\n\n");
+    log_skip_other_log_outputs(LOG_JOY);
 
     uart_printf("\r\n" YELLOWC("2: ") "%s\x1b[K\r\n" YELLOWC("1: ") "%s\x1b[K\r\n" YELLOWC("0: ") "%s\x1b[K\x1b[3A",
         joy_state_table[states[2]],
@@ -338,8 +358,7 @@ void log_joy(enum joy_state states[3])
         joy_state_table[states[0]]);
 
     /* Restore cursor to where it was before printing our log message */
-    if (log_mode & LOG_ADC)
-        uart_puts("\x1b[2A");
+    log_unskip_other_log_outputs(LOG_JOY);
     set_cursor_h(cursor_idx);
 }
 void log_seq(enum cmd_seq seq)
@@ -347,14 +366,11 @@ void log_seq(enum cmd_seq seq)
     uint8_t i;
     static enum cmd_seq seq_history[3];
 
-    if (!(log_mode & LOG_SEQ))
+    if (!(log_category & LOG_SEQ_MASK))
         return;
 
     /* Skip over previous log messages if they're enabled */
-    if (log_mode & LOG_ADC)
-        uart_puts("\n\n");
-    if (log_mode & LOG_JOY)
-        uart_puts("\n\n\n");
+    log_skip_other_log_outputs(LOG_SEQ);
 
     seq_history[0] = seq_history[1];
     seq_history[1] = seq_history[2];
@@ -364,55 +380,42 @@ void log_seq(enum cmd_seq seq)
     while (i--)
     {
         enum cmd_seq s = seq_history[i];
-        uart_printf("\r\n" GREENC("%u: ") "%s%s\x1b[K", i, arrow_table[s], s ? " + x" : "");;
+        uart_printf("\r\n" GREENC("%u: ") "%s\x1b[K", i, sequence_name_table[s]);
     }
-    uart_puts("\x1b[3A");
+    uart_printf("\x1b[3A");
 
     /* Restore cursor to where it was before printing our log message */
-    if (log_mode & LOG_JOY)
-        uart_puts("\x1b[3A");
-    if (log_mode & LOG_ADC)
-        uart_puts("\x1b[2A");
+    log_unskip_other_log_outputs(LOG_SEQ);
     set_cursor_h(cursor_idx);
 }
 void log_dac(uint8_t swx, uint8_t swy, const uint8_t* dac01_write_buf)
 {
-    if (!(log_mode & LOG_DAC))
+    if (!(log_category & LOG_DAC))
         return;
 
     /* Skip over previous log messages if they're enabled */
-    if (log_mode & LOG_ADC)
-        uart_puts("\n\n");
-    if (log_mode & LOG_JOY)
-        uart_puts("\n\n\n");
-    if (log_mode & LOG_SEQ)
-        uart_puts("\n\n\n");
+    log_skip_other_log_outputs(LOG_DAC);
 
-    uart_puts("\r\n" BLUEC("DAC0: "));
+    uart_printf("\r\n" BLUEC("DAC0: "));
     if (swx)
     {
         uint8_t value = (uint8_t)(dac01_write_buf[1] << 4) | (dac01_write_buf[2] >> 4);
         uart_printf("%u", value);
     }
     else
-        uart_puts("--");
-    uart_puts("\x1b[K\r\n" BLUEC("DAC1: "));    
+        uart_printf("--");
+    uart_printf("\x1b[K\r\n" BLUEC("DAC1: "));    
     if (swy)
     {
         uint8_t value = (uint8_t)(dac01_write_buf[4] << 4) | (dac01_write_buf[5] >> 4);
         uart_printf("%u", value);
     }
     else
-        uart_puts("--");
-    uart_puts("\x1b[K\x1b[2A");
+        uart_printf("--");
+    uart_printf("\x1b[K\x1b[2A");
 
     /* Restore cursor to where it was before printing our log message */
-    if (log_mode & LOG_SEQ)
-        uart_puts("\x1b[3A");
-    if (log_mode & LOG_JOY)
-        uart_puts("\x1b[3A");
-    if (log_mode & LOG_ADC)
-        uart_puts("\x1b[2A");
+    log_unskip_other_log_outputs(LOG_DAC);
     set_cursor_h(cursor_idx);
 }
 static void cmd_log(uint8_t argc, char** argv)
@@ -420,36 +423,42 @@ static void cmd_log(uint8_t argc, char** argv)
     struct category {
         const char* name;
         const char* desc;
-        uint8_t value;
+        uint8_t mask;
     };
     static const struct category categories[] = {
-#define X(name, value, str, desc) {str, desc, value},
+#define X(name, mask, str, desc) {str, desc, mask},
         LOG_LIST
 #undef X
     };
     
     if (argc == 0)
     {
-        uart_puts(MAGENTA("\r\nAvailable log categories:"));
+        uart_printf(MAGENTA("\r\nAvailable log categories:"));
         for (uint8_t i = 0; i != LOG_COUNT; ++i)
             uart_printf("\r\n  " GREENC("%s") "  %s", categories[i].name, categories[i].desc);
+        return;
     }
-    else
-    {
-        for (uint8_t i = 0; i != LOG_COUNT; ++i)
-            if (strcmp(argv[0], categories[i].name) == 0)
-            {
-                if (i < LOG_MASK_START)
-                    log_mode = categories[i].value;
-                else
-                    log_mode ^= categories[i].value;
-                return;
-            }
-        uart_printf(REDC("\r\nError: ") "Unknown category '%s'", argv[0]);
-    }
+    
+    for (uint8_t i = 0; i != LOG_COUNT; ++i)
+        if (strcmp(argv[0], categories[i].name) == 0)
+        {
+            if (i < 2)  /* ALL and NONE categories */
+                log_category = categories[i].mask;
+            else
+                log_category ^= categories[i].mask;
+            return;
+        }
+    
+    uart_printf(REDC("\r\nError: ") "Unknown category");
 }
 
 /* -------------------------------------------------------------------------- */
+/*!
+ * @brief Splits a string at each whitespace by inserting null-bytes. Pointers
+ * to each substring are written to the argv parameter. Empty strings are
+ * removed and multiple consecutive spaces, including leading and trailing
+ * spaces, are ignored.
+ */
 static uint8_t split_args(char* s, char** argv, uint8_t maxsplit)
 {
     char* start;
@@ -488,7 +497,7 @@ static void execute_current_line(void)
         return;
     }
 
-    uart_puts(REDC("\r\nError:") " Unknown command");
+    uart_printf(REDC("\r\nError:") " Unknown command");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -499,7 +508,7 @@ static void set_line_and_print(const char* new_text)
     cursor_idx = line_len;
     set_cursor_h(0);
     clear_from_cursor_until_end();
-    uart_puts(line);
+    uart_printf(line);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -582,7 +591,7 @@ static void cli_putc_csi(char c)
             }
 
         case 'C':  /* Cursor forward */
-            /* Here we make the assumption that the CSI param consists of 1 character */
+            /* Here we make the assumption that the CSI param consists of 1 character. I hope that's OK */
             if (csi_param_idx == 0)
                 cursor_idx++;  /* default is 1 */
             else
@@ -595,7 +604,7 @@ static void cli_putc_csi(char c)
             break;
 
         case 'D':  /* Cursor back */
-            /* Here we make the assumption that the CSI param consists of 1 character */
+            /* Here we make the assumption that the CSI param consists of 1 character. I hope that's OK */
             if (csi_param_idx == 0 && cursor_idx > 0)
             {
                 if (cursor_idx > 0)
@@ -639,7 +648,7 @@ static void cli_putc_csi(char c)
                 history_read_offset = 0;
 
                 clear_from_cursor_until_end();
-                uart_puts(line + cursor_idx);
+                uart_printf(line + cursor_idx);
                 set_cursor_h(cursor_idx);
                 break;
             }
@@ -682,12 +691,12 @@ static void cli_putc_normal(char c)
 
     case 0x03:  /* CTRL+C (End of Text) */
         if (c == 0x03)
-            uart_puts("^C");
+            uart_printf("^C");
 
         cursor_idx = 0;
         line_len = 0;
         line[0] = '\0';
-        uart_puts("\r\n" PROMPT "\x1b[K");
+        uart_printf("\r\n" PROMPT "\x1b[K");
 
         break;
 
@@ -708,7 +717,7 @@ static void cli_putc_normal(char c)
 
         set_cursor_h(cursor_idx);
         clear_from_cursor_until_end();
-        uart_puts(line + cursor_idx);
+        uart_printf(line + cursor_idx);
         set_cursor_h(cursor_idx);
         break;
 
@@ -719,7 +728,7 @@ static void cli_putc_normal(char c)
         /* Insert character at cursor position */
         memmove(line + cursor_idx + 1, line + cursor_idx, line_len - cursor_idx + 1);
         line[cursor_idx] = c;
-        uart_puts(line + cursor_idx);
+        uart_printf(line + cursor_idx);
         cursor_idx++;
         line_len++;
         history_read_offset = 0;

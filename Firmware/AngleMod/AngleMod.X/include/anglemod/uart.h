@@ -9,8 +9,8 @@
 #include "anglemod/rb.h"
 #include <string.h>
 
-#define TX_BUF_SIZE 16u
-#define RX_BUF_SIZE 16u
+#define TX_BUF_SIZE 64u
+#define RX_BUF_SIZE 8u
 #define TX_RWTYPE uint8_t
 #define RX_RWTYPE uint8_t
 
@@ -31,11 +31,8 @@
 void uart_init(void);
 
 void uart_putbytes(const char* start, uint8_t len);
-
 void uart_putc(char c);
-void uart_putu(uint8_t value);
 void uart_printf(const char* fmt, ...);
-#define uart_puts(s) uart_putbytes(s, (uint8_t)strlen(s))
 
 void uart_tx_isr(void);
 void uart_rx_isr(void);

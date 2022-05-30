@@ -16,16 +16,17 @@
     X(SEQ,  0x04, "seq", "Log all detected command sequences") \
     X(DAC,  0x08, "dac", "Log DAC")
 
-enum log_mode
+enum log_category
 {
-#define X(name, value, str, desc) LOG_##name = value,
+#define X(name, mask, str, desc) LOG_##name,
     LOG_LIST
 #undef X
 
-    /* Have to track these manually unfortunately */
-    LOG_COUNT = 6,
-    LOG_MASK_START = 2,
-    LOG_MASK_END = 6
+    LOG_COUNT,
+
+#define X(name, mask, str, desc) LOG_##name##_MASK = mask,
+    LOG_LIST
+#undef X
 };
 
 void log_adc(void);
