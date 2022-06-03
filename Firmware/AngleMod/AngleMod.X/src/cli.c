@@ -294,31 +294,22 @@ static void cmd_mirror(uint8_t argc, char** argv)
         argv[0][1] >= '1' && argv[0][1] <= '8')
     {
         uint8_t from_idx = (uint8_t)((argv[0][0] - 'b') << 3) + (argv[0][1] - '1');
+        uint8_t mirror_y_idx = mirror_table[from_idx] & 0x0F;
+        uint8_t mirror_x_idx = mirror_table[from_idx] >> 4;
+        uint8_t mirror_xy_idx = mirror_table[mirror_x_idx] & 0x0F;
 
         if (argv[1][0] == 'x' && argv[1][1] == 'y')
         {
-            uint8_t mirror_y_idx = mirror_table[from_idx] & 0x0F;
-            uint8_t mirror_x_idx = mirror_table[from_idx] >> 4;
-            uint8_t mirror_xy_idx = mirror_table[mirror_x_idx] & 0x0F;
-            
-            p->angles[mirror_y_idx].x = (uint8_t)(255-p->angles[from_idx].x);
-            p->angles[mirror_y_idx].y = p->angles[from_idx].y;
-            
-            p->angles[mirror_x_idx].x = p->angles[from_idx].x;
-            p->angles[mirror_x_idx].y = (uint8_t)(255-p->angles[from_idx].y);
-            
             p->angles[mirror_xy_idx].x = (uint8_t)(255 - p->angles[from_idx].x);
             p->angles[mirror_xy_idx].y = (uint8_t)(255 - p->angles[from_idx].y);
         }
-        else if (argv[1][0] == 'x')
+        if (argv[1][0] == 'x' || argv[1][1] == 'x')
         {
-            uint8_t mirror_x_idx = mirror_table[from_idx] >> 4;
             p->angles[mirror_x_idx].x = p->angles[from_idx].x;
             p->angles[mirror_x_idx].y = (uint8_t)(255 - p->angles[from_idx].y);
         }
-        else if (argv[1][0] == 'y')
+        if (argv[1][0] == 'y' || argv[1][1] == 'y')
         {
-            uint8_t mirror_y_idx = mirror_table[from_idx] & 0x0F;
             p->angles[mirror_y_idx].x = (uint8_t)(255 - p->angles[from_idx].x);
             p->angles[mirror_y_idx].y = p->angles[from_idx].y;
         }
