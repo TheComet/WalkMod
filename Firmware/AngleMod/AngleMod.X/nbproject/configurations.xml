@@ -15,6 +15,7 @@
       <itemPath>include/anglemod/rb.h</itemPath>
       <itemPath>include/anglemod/uart.h</itemPath>
       <itemPath>include/anglemod/log.h</itemPath>
+      <itemPath>include/anglemod/math.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -34,6 +35,7 @@
       <itemPath>src/param.c</itemPath>
       <itemPath>src/uart.c</itemPath>
       <itemPath>src/rb.c</itemPath>
+      <itemPath>src/math.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

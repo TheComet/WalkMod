@@ -24,12 +24,12 @@
 
 #define RB_DECLARE_API(name, T, S)                                            \
     void rb_##name##_init(void);                                              \
-    /*S rb_##name##_put_single(const T* data);*/                                  \
+    S rb_##name##_put_single(const T* data);                                  \
     S rb_##name##_put_single_value(T data);                                   \
-    /*S rb_##name##_put(const T* data, S len);*/                                  \
-    /*S rb_##name##_take(T* data, S maxlen);*/                                    \
+    S rb_##name##_put(const T* data, S len);                                  \
+    S rb_##name##_take(T* data, S maxlen);                                    \
     S rb_##name##_take_single(T* data);                                       \
-    /*S rb_##name##_count(void);*/
+    S rb_##name##_count(void);
 
 #define RB_DEFINE_API(name, T, N, S)                                          \
     static struct                                                             \
@@ -47,12 +47,6 @@
     }                                                                         \
                                                                               \
     /* -------------------------------------------------------------------- */\
-    S rb_##name##_put_single(const T* data)                                   \
-    {                                                                         \
-        return rb_##name##_put_single_value(*data);                           \
-    }                                                                         \
-                                                                              \
-    /* -------------------------------------------------------------------- */\
     S rb_##name##_put_single_value(T data)                                    \
     {                                                                         \
         if (RB_IS_FULL(&rb_##name, N))                                        \
@@ -62,6 +56,12 @@
         rb_##name.buffer[write] = data;                                       \
         rb_##name.write = (write + 1u) & ((N)-1u);                            \
         return 1;                                                             \
+    }                                                                         \
+                                                                              \
+    /* -------------------------------------------------------------------- */\
+    S rb_##name##_put_single(const T* data)                                   \
+    {                                                                         \
+        return rb_##name##_put_single_value(*data);                           \
     }                                                                         \
                                                                               \
     /* -------------------------------------------------------------------- */\

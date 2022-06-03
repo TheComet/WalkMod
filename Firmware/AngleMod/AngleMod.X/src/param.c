@@ -53,7 +53,7 @@ void param_set_defaults(void)
     param.dac_clamp.yl = 85;
     param.dac_clamp.yh = 171;
 
-#define X(name, str, init_x, init_y) \
+#define X(name, str, mirrx, mirry, init_x, init_y) \
     param.angles[SEQ_##name - 1].x = init_x; \
     param.angles[SEQ_##name - 1].y = init_y;
     SEQ_LIST

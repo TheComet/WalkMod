@@ -73,7 +73,15 @@ int main(int argc, char** argv)
     if (hPort == INVALID_HANDLE_VALUE)
         return -1;
 
-    char readBuf[5];
+    COMMCONFIG cc;
+    GetCommState(hPort, &cc.dcb);
+    cc.dcb.fDtrControl = DTR_CONTROL_DISABLE;
+    cc.dcb.fRtsControl = RTS_CONTROL_DISABLE;
+    cc.dcb.fOutxCtsFlow = FALSE;
+    cc.dcb.fOutxDsrFlow = FALSE;
+    SetCommState(hPort, &cc.dcb);
+
+    char readBuf[1];
     DWORD bytesRead = 0;
     HANDLE readEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     OVERLAPPED readOv = { 0 };

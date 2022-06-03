@@ -4,21 +4,22 @@
 #include "anglemod/log.h"
 #include "anglemod/joy.h"
 #include "anglemod/dac.h"
+#include "anglemod/math.h"
 #include <ctype.h>  /* isprint(), isspace() */
 #include <assert.h>
 
 #define PROMPT "> "
-#define DEGREES "\xC2\xB0"
+#define DEGREES "d"
 
 #if defined (CLI_USE_COLOR)
-#define CLEAR(x)   "\x1b[0m" x
-#define RED(x)     "\x1b[1;31m" x
-#define GREEN(x)   "\x1b[1;32m" x
-#define YELLOW(x)  "\x1b[1;33m" x
-#define BLUE(x)    "\x1b[1;34m" x
-#define MAGENTA(x) "\x1b[1;35m" x
-#define CYAN(x)    "\x1b[1;36m" x
-#define WHITE(x)   "\x1b[1;37m" x
+#define CLEAR(x)    "\x1b[0m"    x
+#define RED(x)      "\x1b[1;31m" x
+#define GREEN(x)    "\x1b[1;32m" x
+#define YELLOW(x)   "\x1b[1;33m" x
+#define BLUE(x)     "\x1b[1;34m" x
+#define MAGENTA(x)  "\x1b[1;35m" x
+#define CYAN(x)     "\x1b[1;36m" x
+#define WHITE(x)    "\x1b[1;37m" x
 #define REDC(x)     "\x1b[1;31m" x "\x1b[0m"
 #define GREENC(x)   "\x1b[1;32m" x "\x1b[0m"
 #define YELLOWC(x)  "\x1b[1;33m" x "\x1b[0m"
@@ -68,7 +69,7 @@ static uint8_t csi_param_idx = 0;
 
 static const char* sequence_name_table[] = {
     "none",  /* SEQ_NONE */
-#define X(name, str, x, y) str " + x",
+#define X(name, str, mirrx, mirry, x, y) str " + x",
     SEQ_LIST
 #undef X
 };
@@ -79,6 +80,7 @@ static void cmd_help(uint8_t argc, char** argv);
 static void cmd_toggle(uint8_t argc, char** argv);
 static void cmd_joy(uint8_t argc, char** argv);
 static void cmd_angle(uint8_t argc, char** argv);
+static void cmd_mirror(uint8_t argc, char** argv);
 static void cmd_clamp(uint8_t argc, char** argv);
 static void cmd_quantize(uint8_t argc, char** argv);
 static void cmd_log(uint8_t argc, char** argv);
@@ -98,6 +100,7 @@ static struct cli_cmd commands[] = {
     {"toggle", "<index>", "Enable/disable different modes", cmd_toggle},
     {"joy", "<xy value> [hysteresis]", "Configure how the joystick is converted into directions", cmd_joy},
     {"angle", "<index> <angle|<x> <y>>", "Configure angles for command inputs", cmd_angle},
+    {"mirror", "<index> <x|y|xy>", "Mirrors the coordinates across the X or Y axis", cmd_mirror},
     {"clamp", "<x> <y>", "Set the clamp threshold for normal mode", cmd_clamp},
     {"quantize", "", "", cmd_quantize},
     {"save", "", "Save changes to non-volatile memory", cmd_save},
@@ -120,9 +123,10 @@ static void clear_from_cursor_until_end(void)
 }
 
 /* -------------------------------------------------------------------------- */
-static uint8_t u8_atoi(const char* s)
+#define u8_atoi(x) ((uint8_t)u16_atoi(x))
+static uint16_t u16_atoi(const char* s)
 {
-    uint8_t result = *s - '0';
+    uint16_t result = *s - '0';
     while (*++s)
     {
         result *= 10;
@@ -183,7 +187,7 @@ static void print_angles_and_toggle_states()
                 item_idx + 1,
                 sequence_name_table[i+1],
                 p->angles[i].x, p->angles[i].y,
-                0);
+                (uint8_t)atan2((int8_t)(p->angles[i].y-127), (int8_t)(p->angles[i].x-127)));
     }
 }
 
@@ -248,13 +252,76 @@ static void cmd_angle(uint8_t argc, char** argv)
 {
     struct param* p = param_get();
 
-    if (argc > 2 && 
+    if (argc >= 2 && 
         argv[0][0] >= 'b' && argv[0][0] <= 'd' && 
         argv[0][1] >= '1' && argv[0][1] <= '8')
     {
         uint8_t i = (uint8_t)((argv[0][0] - 'b') << 3) + (argv[0][1] - '1');
-        p->angles[i].x = u8_atoi(argv[1]);
-        p->angles[i].y = u8_atoi(argv[2]);
+        
+        if (argc == 3)
+        {
+            p->angles[i].x = u8_atoi(argv[1]);
+            p->angles[i].y = u8_atoi(argv[2]);
+        }
+        else if (argc == 2)
+        {
+            uint16_t a = *argv[1] == '-' ?
+                360 - u16_atoi(argv[1] + 1) :
+                u16_atoi(argv[1]);
+            int8_t x0 = cos_lookup(a);
+            int8_t y0 = sin_lookup(a);
+            p->angles[i].x = (uint8_t)(x0 + 127);
+            p->angles[i].y = (uint8_t)(y0 + 127);
+        }
+    }
+
+    print_angles_and_toggle_states();
+}
+
+/* -------------------------------------------------------------------------- */
+static void cmd_mirror(uint8_t argc, char** argv)
+{
+    struct param* p = param_get();
+
+    static const uint8_t mirror_table[SEQ_COUNT] = {
+#define X(name, str, mirrx, mirry, x, y) (uint8_t)((((uint8_t)(SEQ_##mirrx - 1) << 4)) | ((uint8_t)(SEQ_##mirry) - 1)),
+        SEQ_LIST
+#undef X
+    };
+
+    if (argc == 2 &&
+        argv[0][0] >= 'b' && argv[0][0] <= 'd' &&
+        argv[0][1] >= '1' && argv[0][1] <= '8')
+    {
+        uint8_t from_idx = (uint8_t)((argv[0][0] - 'b') << 3) + (argv[0][1] - '1');
+
+        if (argv[1][0] == 'x' && argv[1][1] == 'y')
+        {
+            uint8_t mirror_y_idx = mirror_table[from_idx] & 0x0F;
+            uint8_t mirror_x_idx = mirror_table[from_idx] >> 4;
+            uint8_t mirror_xy_idx = mirror_table[mirror_x_idx] & 0x0F;
+            
+            p->angles[mirror_y_idx].x = (uint8_t)(255-p->angles[from_idx].x);
+            p->angles[mirror_y_idx].y = p->angles[from_idx].y;
+            
+            p->angles[mirror_x_idx].x = p->angles[from_idx].x;
+            p->angles[mirror_x_idx].y = (uint8_t)(255-p->angles[from_idx].y);
+            
+            p->angles[mirror_xy_idx].x = (uint8_t)(255 - p->angles[from_idx].x);
+            p->angles[mirror_xy_idx].y = (uint8_t)(255 - p->angles[from_idx].y);
+        }
+        else if (argv[1][0] == 'x')
+        {
+            uint8_t mirror_x_idx = mirror_table[from_idx] >> 4;
+            p->angles[mirror_x_idx].x = p->angles[from_idx].x;
+            p->angles[mirror_x_idx].y = (uint8_t)(255 - p->angles[from_idx].y);
+        }
+        else if (argv[1][0] == 'y')
+        {
+            uint8_t mirror_y_idx = mirror_table[from_idx] & 0x0F;
+            p->angles[mirror_y_idx].x = (uint8_t)(255 - p->angles[from_idx].x);
+            p->angles[mirror_y_idx].y = p->angles[from_idx].y;
+        }
     }
 
     print_angles_and_toggle_states();
@@ -528,7 +595,7 @@ static void cli_putc_escape(char c)
 /* -------------------------------------------------------------------------- */
 static void cli_putc_csi(char c)
 {
-    /* 
+    /*
      * Wiki says parameter bytes could be followed by "intermediate bytes" in 
      * the range 0x20-0x2F, but none of the sequences we care about have these,
      * so we ignore them.

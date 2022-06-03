@@ -1,4 +1,4 @@
-/* !
+﻿/* !
  * @file cmd_seq.h
  * @author TheComet
  */
@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 
+#if 0
 #define ARROW_W  "\xF0\x9F\xA1\xA0"
 #define ARROW_N  "\xF0\x9F\xA1\xA1"
 #define ARROW_E  "\xF0\x9F\xA1\xA2"
@@ -16,6 +17,16 @@
 #define ARROW_NE "\xF0\x9F\xA1\xA5"
 #define ARROW_SE "\xF0\x9F\xA1\xA6"
 #define ARROW_SW "\xF0\x9F\xA1\xA7"
+#else
+#define ARROW_W  " W"
+#define ARROW_N  " N"
+#define ARROW_E  " E"
+#define ARROW_S  " S"
+#define ARROW_NW " NW"
+#define ARROW_NE " NE"
+#define ARROW_SE " SE"
+#define ARROW_SW " SW"
+#endif
 
 #define JOY_STATE_LIST \
     X(NEUTRAL, "neutral") \
@@ -28,34 +39,34 @@
     X(W, "W")   \
     X(NW, "NW")
 
-#define SEQ_LIST                                \
-    /* Cardinal angles */                       \
-    X(CARD_N_NE, ARROW_N ARROW_NE, 215, 255)    \
-    X(CARD_E_NE, ARROW_E ARROW_NE, 255, 215)    \
-    X(CARD_E_SE, ARROW_E ARROW_SE, 255, 41)     \
-    X(CARD_S_SE, ARROW_S ARROW_SE, 41,  0)      \
-    X(CARD_N_NW, ARROW_N ARROW_NW, 215, 255)    \
-    X(CARD_W_NW, ARROW_W ARROW_NW, 215, 255)    \
-    X(CARD_W_SW, ARROW_W ARROW_SW, 215, 255)    \
-    X(CARD_S_SW, ARROW_S ARROW_SW, 215, 255)    \
-    /* Diagonal angles */                       \
-    X(DIAG_NE_N, ARROW_NE ARROW_N, 215, 255)    \
-    X(DIAG_NE_E, ARROW_NE ARROW_E, 215, 255)    \
-    X(DIAG_SE_E, ARROW_SE ARROW_E, 215, 255)    \
-    X(DIAG_SE_S, ARROW_SE ARROW_S, 215, 255)    \
-    X(DIAG_NW_N, ARROW_NW ARROW_N, 215, 255)    \
-    X(DIAG_NW_W, ARROW_NW ARROW_W, 215, 255)    \
-    X(DIAG_SW_W, ARROW_SW ARROW_W, 215, 255)    \
-    X(DIAG_SW_S, ARROW_SW ARROW_S, 215, 255)    \
-    /* Special angles */                        \
-    X(SPEC_E_NE_N, ARROW_E ARROW_NE ARROW_N, 0, 0) \
-    X(SPEC_E_SE_S, ARROW_E ARROW_SE ARROW_S, 0, 0) \
-    X(SPEC_W_NW_N, ARROW_W ARROW_NW ARROW_N, 0, 0) \
-    X(SPEC_W_SW_S, ARROW_W ARROW_SW ARROW_S, 0, 0) \
-    X(SPEC_N_NE_E, ARROW_N ARROW_NE ARROW_E, 0, 0) \
-    X(SPEC_S_SE_E, ARROW_S ARROW_SE ARROW_E, 0, 0) \
-    X(SPEC_N_NW_W, ARROW_N ARROW_NW ARROW_W, 0, 0) \
-    X(SPEC_S_SW_W, ARROW_S ARROW_SW ARROW_W, 0, 0)
+#define SEQ_LIST                                                      \
+    /* Cardinal angles */                                             \
+    X(CARD_N_NE, ARROW_N ARROW_NE, CARD_S_SE, CARD_N_NW, 200, 231)    \
+    X(CARD_E_NE, ARROW_E ARROW_NE, CARD_E_SE, CARD_W_NW, 231, 200)    \
+    X(CARD_E_SE, ARROW_E ARROW_SE, CARD_E_NE, CARD_W_SW, 231, 55)     \
+    X(CARD_S_SE, ARROW_S ARROW_SE, CARD_N_NE, CARD_S_SW, 200, 24)     \
+    X(CARD_N_NW, ARROW_N ARROW_NW, CARD_S_SW, CARD_N_NE, 55,  231)    \
+    X(CARD_W_NW, ARROW_W ARROW_NW, CARD_W_SW, CARD_E_NE, 24,  200)    \
+    X(CARD_W_SW, ARROW_W ARROW_SW, CARD_W_NW, CARD_E_SE, 24,  55)     \
+    X(CARD_S_SW, ARROW_S ARROW_SW, CARD_N_NW, CARD_S_SE, 55,  24)     \
+    /* Diagonal angles */                                             \
+    X(DIAG_NE_N, ARROW_NE ARROW_N, DIAG_SE_S, DIAG_NW_N, 149, 252)    \
+    X(DIAG_NE_E, ARROW_NE ARROW_E, DIAG_SE_E, DIAG_NW_W, 252, 149)    \
+    X(DIAG_SE_E, ARROW_SE ARROW_E, DIAG_NE_E, DIAG_SW_W, 252, 106)    \
+    X(DIAG_SE_S, ARROW_SE ARROW_S, DIAG_NE_N, DIAG_SW_S, 149, 3)      \
+    X(DIAG_NW_N, ARROW_NW ARROW_N, DIAG_SW_S, DIAG_NE_N, 106, 252)    \
+    X(DIAG_NW_W, ARROW_NW ARROW_W, DIAG_SW_W, DIAG_NE_E, 3,   149)    \
+    X(DIAG_SW_W, ARROW_SW ARROW_W, DIAG_NW_W, DIAG_SE_E, 3,   106)    \
+    X(DIAG_SW_S, ARROW_SW ARROW_S, DIAG_NW_N, DIAG_SE_S, 106, 3)      \
+    /* Special angles */                                              \
+    X(SPEC_E_NE_N, ARROW_E ARROW_NE ARROW_N, SPEC_E_SE_S, SPEC_W_NW_N, 0, 0) \
+    X(SPEC_E_SE_S, ARROW_E ARROW_SE ARROW_S, SPEC_E_NE_N, SPEC_W_SW_S, 0, 0) \
+    X(SPEC_W_NW_N, ARROW_W ARROW_NW ARROW_N, SPEC_W_SW_S, SPEC_E_NE_N, 0, 0) \
+    X(SPEC_W_SW_S, ARROW_W ARROW_SW ARROW_S, SPEC_W_NW_N, SPEC_E_SE_S, 0, 0) \
+    X(SPEC_N_NE_E, ARROW_N ARROW_NE ARROW_E, SPEC_S_SE_E, SPEC_N_NW_W, 0, 0) \
+    X(SPEC_S_SE_E, ARROW_S ARROW_SE ARROW_E, SPEC_N_NE_E, SPEC_S_SW_W, 0, 0) \
+    X(SPEC_N_NW_W, ARROW_N ARROW_NW ARROW_W, SPEC_S_SW_W, SPEC_N_NE_E, 0, 0) \
+    X(SPEC_S_SW_W, ARROW_S ARROW_SW ARROW_W, SPEC_N_NW_W, SPEC_S_SE_E, 0, 0)
 
 enum joy_state
 {
@@ -69,7 +80,7 @@ enum joy_state
 enum cmd_seq
 {
     SEQ_NONE,
-#define X(name, str, x, y) SEQ_##name,
+#define X(name, str, mirrx, mirry, x, y) SEQ_##name,
     SEQ_LIST
 #undef X
     SEQ_COUNT
