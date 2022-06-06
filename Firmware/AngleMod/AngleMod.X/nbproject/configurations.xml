@@ -6,16 +6,17 @@
                    projectFiles="true">
       <itemPath>include/anglemod/btn.h</itemPath>
       <itemPath>include/anglemod/cli.h</itemPath>
-      <itemPath>include/anglemod/cmd_seq.h</itemPath>
       <itemPath>include/anglemod/dac.h</itemPath>
       <itemPath>include/anglemod/gpio.h</itemPath>
       <itemPath>include/anglemod/joy.h</itemPath>
       <itemPath>include/anglemod/osc.h</itemPath>
-      <itemPath>include/anglemod/param.h</itemPath>
       <itemPath>include/anglemod/rb.h</itemPath>
       <itemPath>include/anglemod/uart.h</itemPath>
       <itemPath>include/anglemod/log.h</itemPath>
       <itemPath>include/anglemod/math.h</itemPath>
+      <itemPath>include/anglemod/config.h</itemPath>
+      <itemPath>include/anglemod/adc.h</itemPath>
+      <itemPath>include/anglemod/seq.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -26,16 +27,17 @@
                    projectFiles="true">
       <itemPath>src/btn.c</itemPath>
       <itemPath>src/cli.c</itemPath>
-      <itemPath>src/cmd_seq.c</itemPath>
       <itemPath>src/dac.c</itemPath>
       <itemPath>src/gpio.c</itemPath>
       <itemPath>src/joy.c</itemPath>
       <itemPath>src/main.c</itemPath>
       <itemPath>src/osc.c</itemPath>
-      <itemPath>src/param.c</itemPath>
       <itemPath>src/uart.c</itemPath>
       <itemPath>src/rb.c</itemPath>
       <itemPath>src/math.c</itemPath>
+      <itemPath>src/config.c</itemPath>
+      <itemPath>src/adc.c</itemPath>
+      <itemPath>src/seq.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

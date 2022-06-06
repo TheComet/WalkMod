@@ -1,47 +1,16 @@
 #include "anglemod/math.h"
 
 /* ------------------------------------------------------------------------- */
-int16_t fpsin(int16_t i)
-{
-    /* Convert (signed) input to a value between 0 and 8192. (8192 is pi/2, which is the region of the curve fit). */
-    /* ------------------------------------------------------------------- */
-    i <<= 1;
-    uint8_t c = i<0; //set carry for output pos/neg
-
-    if(i == (i|0x4000)) // flip input value to corresponding value in range [0..8192)
-        i = (1<<15) - i;
-    i = (i & 0x7FFF) >> 1;
-    /* ------------------------------------------------------------------- */
-
-    /* The following section implements the formula:
-     = y * 2^-n * ( A1 - 2^(q-p)* y * 2^-n * y * 2^-n * [B1 - 2^-r * y * 2^-n * C1 * y]) * 2^(a-q)
-    Where the constants are defined as follows:
-    */
-    enum {A1=3370945099UL, B1=2746362156UL, C1=292421UL};
-    enum {n=13, p=32, q=31, r=3, a=12};
-
-    uint32_t y = (C1*((uint32_t)i))>>n;
-    y = B1 - (((uint32_t)i*y)>>r);
-    y = (uint32_t)i * (y>>n);
-    y = (uint32_t)i * (y>>n);
-    y = A1 - (y>>(p-q));
-    y = (uint32_t)i * (y>>n);
-    y = (y+(1UL<<(q-a-1)))>>(q-a); // Rounding
-
-    return c ? (int16_t)-y : (int16_t)y;
-}
-
-/* ------------------------------------------------------------------------- */
 static int8_t table[] = {
     0,   
-    2,   4,   7,   9,   11,  13,  15,  18,  20,  22,  24,  26,  29,  31,  33,  /* 15 */
-    35,  37,  39,  41,  43,  46,  48,  50,  52,  54,  56,  58,  60,  62,  63,  /* 30 */
-    65,  67,  69,  71,  73,  75,  76,  78,  80,  82,  83,  85,  87,  88,  90,  /* 45 */
-    91,  93,  94,  96,  97,  99,  100, 101, 103, 104, 105, 107, 108, 109, 110, /* 60 */
-    111, 112, 113, 114, 115, 116, 117, 118, 119, 119, 120, 121, 121, 122, 123, /* 75 */
-    123, 124, 124, 125, 125, 125, 126, 126, 126, 127, 127, 127, 127, 127, 127, /* 90 */
+    2,   4,   6,   8,   11,  13,  15,  17,  19,  22,  24,  26,  28,  30,  32,  /* 15 */
+    35,  37,  39,  41,  43,  45,  47,  49,  51,  53,  55,  57,  59,  61,  63,  /* 30 */
+    65 , 67,  69,  71,  72,  74,  76,  78,  79,  81,  83,  84,  86,  88,  89,  /* 45 */
+    91,  92,  94,  95,  97,  98,  100, 101, 102, 104, 105, 106, 107, 108, 109, /* 60 */
+    111, 112, 113, 114 ,115, 116, 116, 117, 118, 119, 120, 120, 121, 122, 122, /* 75 */
+    123, 123, 124, 124, 125, 125, 125, 126, 126, 126, 126, 126, 126, 126, 127, /* 90 */
 };
-int8_t sin_lookup(uint16_t a)
+int8_t fpsin(uint16_t a)
 {
     while (a > 360)
         a -= 360;
@@ -56,11 +25,84 @@ int8_t sin_lookup(uint16_t a)
 }
 
 /* ------------------------------------------------------------------------- */
-uint16_t atan2(int8_t y, int8_t x)
+uint16_t fpatan2(int8_t y, int8_t x)
 {
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-
+/* Unit tests */
 /* ------------------------------------------------------------------------- */
+
+#if defined(GTEST_TESTING)
+
+#define _USE_MATH_DEFINES
+
+#include <gmock/gmock.h>
+#include <cmath>
+
+using namespace testing;
+
+TEST(math, sin_typical_values)
+{
+    EXPECT_THAT(fpsin(0),   Eq(0));
+    EXPECT_THAT(fpsin(30),  Eq(63));
+    EXPECT_THAT(fpsin(45),  Eq(89));
+    EXPECT_THAT(fpsin(60),  Eq(109));
+    EXPECT_THAT(fpsin(90),  Eq(127));
+    EXPECT_THAT(fpsin(120), Eq(109));
+    EXPECT_THAT(fpsin(135), Eq(89));
+    EXPECT_THAT(fpsin(150), Eq(63));
+    EXPECT_THAT(fpsin(180), Eq(0));
+    EXPECT_THAT(fpsin(210), Eq(-63));
+    EXPECT_THAT(fpsin(225), Eq(-89));
+    EXPECT_THAT(fpsin(240), Eq(-109));
+    EXPECT_THAT(fpsin(270), Eq(-127));
+    EXPECT_THAT(fpsin(300), Eq(-109));
+    EXPECT_THAT(fpsin(315), Eq(-89));
+    EXPECT_THAT(fpsin(330), Eq(-63));
+    EXPECT_THAT(fpsin(360), Eq(0));
+}
+
+TEST(math, sin_all_values)
+{
+    for (int i = 0; i != 1000; ++i)
+    {
+        double expected_f = std::sin(i * M_PI / 180) * 127;
+        int8_t expected_i = (int8_t)expected_f;
+        EXPECT_THAT(fpsin(i), Eq(expected_i)) << "i=" << i;
+    }
+}
+
+TEST(math, cos_typical_values)
+{
+    EXPECT_THAT(fpcos(0),   Eq(127));
+    EXPECT_THAT(fpcos(30),  Eq(109));
+    EXPECT_THAT(fpcos(45),  Eq(89));
+    EXPECT_THAT(fpcos(60),  Eq(63));
+    EXPECT_THAT(fpcos(90),  Eq(0));
+    EXPECT_THAT(fpcos(120), Eq(-63));
+    EXPECT_THAT(fpcos(135), Eq(-89));
+    EXPECT_THAT(fpcos(150), Eq(-109));
+    EXPECT_THAT(fpcos(180), Eq(-127));
+    EXPECT_THAT(fpcos(210), Eq(-109));
+    EXPECT_THAT(fpcos(225), Eq(-89));
+    EXPECT_THAT(fpcos(240), Eq(-63));
+    EXPECT_THAT(fpcos(270), Eq(0));
+    EXPECT_THAT(fpcos(300), Eq(63));
+    EXPECT_THAT(fpcos(315), Eq(89));
+    EXPECT_THAT(fpcos(330), Eq(109));
+    EXPECT_THAT(fpcos(360), Eq(127));
+}
+
+TEST(math, cos_all_values)
+{
+    for (int i = 0; i != 1000; ++i)
+    {
+        double expected_f = std::sin((i + 90) * M_PI / 180) * 127;
+        int8_t expected_i = (int8_t)expected_f;
+        EXPECT_THAT(fpcos(i), Eq(expected_i)) << "i=" << i;
+    }
+}
+
+#endif

@@ -1,7 +1,7 @@
 #include <Windows.h>
 #include <thread>
 #include "anglemod/uart.h"
-#include "anglemod/joy.h"
+#include "anglemod/adc.h"
 #include "anglemod/btn.h"
 #include <xc.h>
 #include <cstdio>
@@ -46,11 +46,11 @@ void JoystickToADC(void)
     JOYINFO ji;
     joyGetPos(0, &ji);
 
-    joy_tim0_isr();  /* Triggers measurement of X and Y */
+    tim0_isr();  /* Triggers measurement of X and Y */
     ADRESH = ji.wXpos / 256;
-    joy_adc_isr();
+    adc_isr();
     ADRESH = 255 - ji.wYpos / 256;
-    joy_adc_isr();
+    adc_isr();
 
     static UINT lastButtons = 0;
     if (ji.wButtons & ~lastButtons)

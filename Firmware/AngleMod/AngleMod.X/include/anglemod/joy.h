@@ -8,16 +8,33 @@
 
 #include <stdint.h>
 
-void joy_init(void);
+/* Needs to be in this order, see joy.c:41 */
+#define JOY_STATE_LIST \
+    X(NW, "NW") \
+    X(W, "W")   \
+    X(SW, "SW") \
+    X(N, "N")   \
+    X(NEUTRAL, "neutral") \
+    X(S, "S")   \
+    X(NE, "NE") \
+    X(E, "E")   \
+    X(SE, "SE") \
 
-void joy_set_fast_sampling_mode(void);
-void joy_set_slow_sampling_mode(void);
+enum joy_state
+{
+#define X(name, str) JOY_##name,
+    JOY_STATE_LIST
+#undef X
 
-uint8_t joy_has_new_data_get_and_clear(void);
-uint8_t joy_x(void);
-uint8_t joy_y(void);
+    JOY_STATE_COUNT
+};
 
-void joy_tim0_isr(void);
-void joy_adc_isr(void);
+/*!
+ * Converts the joystick angle into a joystick state and pushes it into the
+ * queue of states, if it is different from the last.
+ */
+void joy_push_state(const uint8_t xy[2]);
+
+const enum joy_state* joy_state_history(void);
 
 #endif	/* JOY_H */

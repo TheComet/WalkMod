@@ -9,12 +9,13 @@
 #include "anglemod/osc.h"
 #include "anglemod/gpio.h"
 #include "anglemod/uart.h"
-#include "anglemod/param.h"
+#include "anglemod/adc.h"
+#include "anglemod/config.h"
 
 #include "anglemod/btn.h"
 #include "anglemod/joy.h"
 #include "anglemod/dac.h"
-#include "anglemod/cmd_seq.h"
+#include "anglemod/seq.h"
 #include "anglemod/cli.h"
 
 #if !defined(CLI_SIM) && !defined(GTEST_TESTING)
@@ -27,7 +28,7 @@
 
 #endif
 
-static enum cmd_seq active_seq = SEQ_NONE;
+static enum seq active_seq = SEQ_NONE;
 
 /* -------------------------------------------------------------------------- */
 #if !defined(CLI_SIM) && !defined(GTEST_TESTING)
@@ -36,20 +37,18 @@ static void init(void)
 void pic16_init(void)
 #endif
 {
-    const struct param* p;
-
     /* Init system-level stuff */
     osc_init();
     gpio_init();
     uart_init();
+    adc_init();
+
+    /* Load config before initializing the user-level stuff */
+    config_load_from_nvm();
 
     /* Init user-level stuff */
-    param_load_from_nvm();
-    p = param_get();
-    joy_init();
     btn_init();
     dac_init();
-    cmd_seq_configure(p->cmd_seq.xythreshold, p->cmd_seq.hysteresis);
 
     /* Enable interrupts */
     INTCONbits.GIE = 1;
@@ -66,12 +65,12 @@ void pic16_process_events(void)
 
     if (btn_pressed_get_and_clear())
     {
-        active_seq = cmd_seq_determine_command();
+        active_seq = seq_find(joy_state_history());
 
         if (active_seq == SEQ_NONE)
         {
-            dac_override_clamp(joy_x(), joy_y());
-            joy_set_fast_sampling_mode();
+            dac_override_clamp(adc_joy_xy());
+            adc_set_fast_sampling_mode();
         }
         else
         {
@@ -81,19 +80,19 @@ void pic16_process_events(void)
     else if (btn_released_get_and_clear())
     {
         dac_override_disable();
-        joy_set_slow_sampling_mode();
+        adc_set_slow_sampling_mode();
     }
 
-    if (joy_has_new_data_get_and_clear())
+    if (adc_has_new_data_get_and_clear())
     {
         if (btn_is_active())
         {
             if (active_seq == SEQ_NONE)
-                dac_override_clamp(joy_x(), joy_y());
+                dac_override_clamp(adc_joy_xy());
         }
         else
         {
-            cmd_seq_push_joy_angle(joy_x(), joy_y());
+            joy_push_state(adc_joy_xy());
         }
     }
 
@@ -126,9 +125,9 @@ void __interrupt() isr(void)
     if (IOCAF & 0x10)
         btn_ioc_isr();
     if (PIR0bits.TMR0IF)
-        joy_tim0_isr();
+        tim0_isr();
     if (PIR1bits.ADIF)
-        joy_adc_isr();
+        adc_isr();
     if (PIR1bits.RC1IF)
         uart_rx_isr();
     if (PIR1bits.TX1IF)

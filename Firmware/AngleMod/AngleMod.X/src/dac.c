@@ -1,6 +1,6 @@
 #include "anglemod/dac.h"
 #include "anglemod/gpio.h"
-#include "anglemod/param.h"
+#include "anglemod/config.h"
 #include "anglemod/log.h"
 
 static uint8_t dac01_write_buf[6] = {
@@ -14,34 +14,6 @@ void dac_init(void)
     SSP1CON1 = 0x10;  /* CKP=1: clock polarity high when idle
                        * SSPM=0000: host mode, Fosc/4=8 MHz */
     SSP1CON1 = 0x30;  /* SSPEN=1: Enable serial port after configuration */
-}
-
-/* -------------------------------------------------------------------------- */
-void dac_set_clamp_threshold(uint8_t x, uint8_t y)
-{
-    struct param* p = param_get();
-    
-    if (x < 128)
-    {
-        p->dac_clamp.xl = (uint8_t)(128 - x);
-        p->dac_clamp.xh = (uint8_t)(128 + x);
-    }
-    else
-    {
-        p->dac_clamp.xl = 0;
-        p->dac_clamp.xh = 255;
-    }
-    
-    if (y < 128)
-    {
-        p->dac_clamp.yl = (uint8_t)(128 - y);
-        p->dac_clamp.yh = (uint8_t)(128 + y);
-    }
-    else
-    {
-        p->dac_clamp.yl = 0;
-        p->dac_clamp.yh = 255;
-    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -80,40 +52,32 @@ static void dac_buf_transfer(void)
 }
 
 /* -------------------------------------------------------------------------- */
-void dac_override_clamp(uint8_t x, uint8_t y)
+void dac_override_clamp(const uint8_t xy[2])
 {
-    const struct param* p = param_get();
+    const struct config* c = config_get();
     
     uint8_t pending_sw = 0;
+    static const uint8_t sw_bits[2] = {SWX_BIT, SWY_BIT};
     
-    if (x < p->dac_clamp.xl)
+    uint8_t* dac_buf_ptr = &dac01_write_buf[1];
+    for (uint8_t i = 0; i != 2; ++i, dac_buf_ptr += 3)
     {
-        /* Update 12-bit value to transfer to DAC in transmit buffer */
-        dac01_write_buf[1] = p->dac_clamp.xl >> 4;
-        dac01_write_buf[2] = (p->dac_clamp.xl << 4) & 0xFF;
-        pending_sw = SWX_BIT;  /* Analog switch needs to be enabled after latch */
-    }
-    else if (x > p->dac_clamp.xh)
-    {
-        /* Update 12-bit value to transfer to DAC in transmit buffer */
-        dac01_write_buf[1] = p->dac_clamp.xh >> 4;
-        dac01_write_buf[2] = (p->dac_clamp.xh << 4) & 0xFF;
-        pending_sw = SWX_BIT;  /* Analog switch needs to be enabled after latch */
-    }
-    
-    if (y < p->dac_clamp.yl)
-    {
-        /* Update 12-bit value to transfer to DAC in transmit buffer */
-        dac01_write_buf[4] = p->dac_clamp.yl >> 4;
-        dac01_write_buf[5] = (p->dac_clamp.yl << 4) & 0xFF;
-        pending_sw |= SWY_BIT;  /* Analog switch needs to be enabled after latch */
-    }
-    else if (y > p->dac_clamp.yh)
-    {
-        /* Update 12-bit value to transfer to DAC in transmit buffer */
-        dac01_write_buf[4] = p->dac_clamp.yh >> 4;
-        dac01_write_buf[5] = (p->dac_clamp.yh << 4) & 0xFF;
-        pending_sw |= SWY_BIT;  /* Analog switch needs to be enabled after latch */
+        uint8_t dac_value;
+
+        uint8_t lower = (uint8_t)(128 - c->dac_clamp.xy[i]);
+        uint8_t upper = (uint8_t)(128 + c->dac_clamp.xy[i]);
+        
+        if (xy[i] < lower)
+            dac_value = lower;
+        else if (xy[i] > upper)
+            dac_value = upper;
+        else
+            continue;  /* Skip writing to DAC */
+        
+            /* Update 12-bit value to transfer to DAC in transmit buffer */
+        dac_buf_ptr[0] = dac_value >> 4;
+        dac_buf_ptr[1] = (dac_value << 4) & 0xFF;
+        pending_sw |= sw_bits[i];  /* Analog switch needs to be enabled after latch */
     }
     
     /* 
@@ -133,16 +97,17 @@ void dac_override_clamp(uint8_t x, uint8_t y)
 }
 
 /* -------------------------------------------------------------------------- */
-void dac_override_sequence(enum cmd_seq seq)
+void dac_override_sequence(enum seq seq)
 {
-    const struct param* p = param_get();
+    const struct config* c = config_get();
 
-    uint8_t x = p->angles[seq - 1].x;
-    uint8_t y = p->angles[seq - 1].y;
-    dac01_write_buf[1] = x >> 4;
-    dac01_write_buf[2] = (x << 4) & 0xFF;
-    dac01_write_buf[4] = y >> 4;
-    dac01_write_buf[5] = (y << 4) & 0xFF;
+    uint8_t* dac_buf_ptr = &dac01_write_buf[1];
+    for (uint8_t i = 0; i != 2; ++i)
+    {
+        dac_buf_ptr[0] = c->angles[seq].xy[i] >> 4;
+        dac_buf_ptr[1] = (c->angles[seq].xy[i] << 4) & 0xFF;
+        dac_buf_ptr += 3;
+    }
 
     dac_buf_transfer();
     log_dac(1, 1, dac01_write_buf);

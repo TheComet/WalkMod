@@ -6,7 +6,8 @@
 #ifndef LOG_H
 #define	LOG_H
 
-#include "anglemod/cmd_seq.h"
+#include "anglemod/joy.h"
+#include "anglemod/seq.h"
 
 #define LOG_LIST \
     X(NONE, 0x00, "off", "Turn off all logging") \
@@ -30,8 +31,8 @@ enum log_category
 };
 
 void log_adc(void);
-void log_joy(enum joy_state states[3]);
-void log_seq(enum cmd_seq seq);
+void log_joy(enum joy_state state_history[3]);
+void log_seq(enum seq seq);
 void log_dac(uint8_t swx, uint8_t swy, const uint8_t* dac01_write_buf);
 
 #endif	/* LOG_H */

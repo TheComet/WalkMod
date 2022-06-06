@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-struct param
+struct config
 {
     union {
         struct {
@@ -24,7 +24,7 @@ struct param
     struct {
         uint8_t xythreshold;
         uint8_t hysteresis;
-    } cmd_seq;
+    } joy;
     
     struct {
         uint8_t xl;

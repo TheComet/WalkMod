@@ -1,8 +1,9 @@
 #include "anglemod/cli.h"
 #include "anglemod/uart.h"
-#include "anglemod/param.h"
+#include "anglemod/config.h"
 #include "anglemod/log.h"
 #include "anglemod/joy.h"
+#include "anglemod/adc.h"
 #include "anglemod/dac.h"
 #include "anglemod/math.h"
 #include <ctype.h>  /* isprint(), isspace() */
@@ -68,8 +69,7 @@ static uint8_t csi_param_buf[CSI_PARAM_BUF_SIZE];
 static uint8_t csi_param_idx = 0;
 
 static const char* sequence_name_table[] = {
-    "none",  /* SEQ_NONE */
-#define X(name, str, mirrx, mirry, x, y) str " + x",
+#define X(name, mirrx, mirry, str, x, y) str " + x",
     SEQ_LIST
 #undef X
 };
@@ -166,7 +166,7 @@ static void cmd_help(uint8_t argc, char** argv)
 /* -------------------------------------------------------------------------- */
 static void print_angles_and_toggle_states()
 {
-    const struct param* p = param_get();
+    const struct config* c = config_get();
     
     static const char* category_name_table[] = {
         "Cardinal Angles",
@@ -174,20 +174,19 @@ static void print_angles_and_toggle_states()
         "Special Angles"
     };
     
-    /* NOTE: We're off by 1 here, because SEQ_NONE is at index 0 */
-    for (uint8_t i = 0; i != SEQ_COUNT - 1; ++i)
+    for (uint8_t i = 0; i != SEQ_COUNT; ++i)
     {
         uint8_t cat_idx = i >> 3;
         uint8_t item_idx = i & 0x07;
         if (item_idx == 0)
             uart_printf(MAGENTAC("\r\n%s:"), category_name_table[cat_idx]);
         uart_printf("\r\n  (\x1b[1;3%cm%c%u\x1b[0m) %s :  " YELLOWC("%u") "," YELLOWC("%u") " " PAREN1("%u" DEGREES, CYAN),
-                (p->enable.bytes[cat_idx+1] & (1 << item_idx)) ? '2' : '1',
+                (c->enable.bytes[cat_idx] & (1 << item_idx)) ? '2' : '1',
                 'b' + cat_idx,
                 item_idx + 1,
-                sequence_name_table[i+1],
-                p->angles[i].x, p->angles[i].y,
-                (uint8_t)atan2((int8_t)(p->angles[i].y-127), (int8_t)(p->angles[i].x-127)));
+                sequence_name_table[i],
+                c->angles[i].xy[0], c->angles[i].xy[1],
+                (uint8_t)fpatan2((int8_t)(c->angles[i].xy[1]-127), (int8_t)(c->angles[i].xy[0]-127)));
     }
 }
 
@@ -195,7 +194,7 @@ static void print_angles_and_toggle_states()
 static void cmd_toggle(uint8_t argc, char** argv)
 {
     uint8_t do_print = 1;
-    struct param* p = param_get();
+    struct config* c = config_get();
 
     while (argc--)
     {
@@ -211,13 +210,13 @@ static void cmd_toggle(uint8_t argc, char** argv)
 
         if (cat_idx == 0)
         {
-            p->enable.normal_mode++;
-            if (p->enable.normal_mode > 2)
-                p->enable.normal_mode = 0;
+            c->enable.normal_mode++;
+            if (c->enable.normal_mode > 2)
+                c->enable.normal_mode = 0;
         }
         else
         {
-            p->enable.bytes[cat_idx] ^= mask;
+            c->enable.bytes[cat_idx-1] ^= mask;
         }
 
         argv++;
@@ -227,9 +226,9 @@ static void cmd_toggle(uint8_t argc, char** argv)
     {
         uart_printf(MAGENTAC("\r\nNormal Mode:"));
         uart_printf("\r\n  (\x1b[1;3%cma1\x1b[0m) When no Command is Detected : \x1b[1;3%cm%s\x1b[0m",
-            p->enable.normal_mode == 0 ? '1' : '2',
-            p->enable.normal_mode == 0 ? '1' : '2',
-            p->enable.normal_mode == 0 ? "Do Nothing" : p->enable.normal_mode == 1 ? "Clamp" : "Quantize");
+            c->enable.normal_mode == 0 ? '1' : '2',
+            c->enable.normal_mode == 0 ? '1' : '2',
+            c->enable.normal_mode == 0 ? "Do Nothing" : c->enable.normal_mode == 1 ? "Clamp" : "Quantize");
 
         print_angles_and_toggle_states();
     }
@@ -238,19 +237,43 @@ static void cmd_toggle(uint8_t argc, char** argv)
 /* -------------------------------------------------------------------------- */
 static void cmd_joy(uint8_t argc, char** argv)
 {
-    struct param* p = param_get();
+    struct config* c = config_get();
+    
+#if defined(JOY_DIAGRAM)
+    static const char* diagram =
+        "\r\n             threshold"
+        "\r\n              |<-->|"
+        "\r\n              |    |"
+        "\r\n        | |       | |"
+        "\r\n    NW  | |   N   | |  NE"
+        "\r\n  ______|_|_______|_|______"
+        "\r\n  ______|_|_______|_|______ < hystersis"
+        "\r\n        | |       | |"
+        "\r\n    W   | | Neut. | |  E"
+        "\r\n  ______|_|_______|_|______"
+        "\r\n  ______|_|_______|_|______"
+        "\r\n        | |       | |"
+        "\r\n    SW  | |   S   | |  SE"
+        "\r\n        | |       | |";
+    
+    uart_printf(diagram);
+#endif
 
-    if (argc == 0)
+    if (argc == 2)
     {
-        uart_printf("\r\nThreshold: %u\r\nHysteresis: %u", p->cmd_seq.xythreshold, p->cmd_seq.hysteresis);
-        return;
+        c->joy.xythreshold = u8_atoi(argv[0]);
+        c->joy.hysteresis = u8_atoi(argv[1]);
     }
+
+    uart_printf("\r\nThreshold: " CYANC("%u") "\r\nHysteresis: " CYANC("%u"), 
+        c->joy.xythreshold, 
+        c->joy.hysteresis);
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_angle(uint8_t argc, char** argv)
 {
-    struct param* p = param_get();
+    struct config* c = config_get();
 
     if (argc >= 2 && 
         argv[0][0] >= 'b' && argv[0][0] <= 'd' && 
@@ -260,18 +283,18 @@ static void cmd_angle(uint8_t argc, char** argv)
         
         if (argc == 3)
         {
-            p->angles[i].x = u8_atoi(argv[1]);
-            p->angles[i].y = u8_atoi(argv[2]);
+            c->angles[i].xy[0] = u8_atoi(argv[1]);
+            c->angles[i].xy[1] = u8_atoi(argv[2]);
         }
         else if (argc == 2)
         {
             uint16_t a = *argv[1] == '-' ?
                 360 - u16_atoi(argv[1] + 1) :
                 u16_atoi(argv[1]);
-            int8_t x0 = cos_lookup(a);
-            int8_t y0 = sin_lookup(a);
-            p->angles[i].x = (uint8_t)(x0 + 127);
-            p->angles[i].y = (uint8_t)(y0 + 127);
+            int8_t x0 = fpcos(a);
+            int8_t y0 = fpsin(a);
+            c->angles[i].xy[0] = (uint8_t)(x0 + 127);
+            c->angles[i].xy[1] = (uint8_t)(y0 + 127);
         }
     }
 
@@ -281,10 +304,10 @@ static void cmd_angle(uint8_t argc, char** argv)
 /* -------------------------------------------------------------------------- */
 static void cmd_mirror(uint8_t argc, char** argv)
 {
-    struct param* p = param_get();
+    struct config* c = config_get();
 
     static const uint8_t mirror_table[SEQ_COUNT] = {
-#define X(name, str, mirrx, mirry, x, y) (uint8_t)((((uint8_t)(SEQ_##mirrx - 1) << 4)) | ((uint8_t)(SEQ_##mirry) - 1)),
+#define X(name, mirrx, mirry, str, x, y) (uint8_t)((uint8_t)(SEQ_##mirrx << 4) | ((uint8_t)SEQ_##mirry)),
         SEQ_LIST
 #undef X
     };
@@ -300,18 +323,18 @@ static void cmd_mirror(uint8_t argc, char** argv)
 
         if (argv[1][0] == 'x' && argv[1][1] == 'y')
         {
-            p->angles[mirror_xy_idx].x = (uint8_t)(255 - p->angles[from_idx].x);
-            p->angles[mirror_xy_idx].y = (uint8_t)(255 - p->angles[from_idx].y);
+            c->angles[mirror_xy_idx].xy[0] = (uint8_t)(255 - c->angles[from_idx].xy[0]);
+            c->angles[mirror_xy_idx].xy[1] = (uint8_t)(255 - c->angles[from_idx].xy[1]);
         }
         if (argv[1][0] == 'x' || argv[1][1] == 'x')
         {
-            p->angles[mirror_x_idx].x = p->angles[from_idx].x;
-            p->angles[mirror_x_idx].y = (uint8_t)(255 - p->angles[from_idx].y);
+            c->angles[mirror_x_idx].xy[0] = (uint8_t)(255 - c->angles[from_idx].xy[0]);
+            c->angles[mirror_x_idx].xy[1] = c->angles[from_idx].xy[1];
         }
         if (argv[1][0] == 'y' || argv[1][1] == 'y')
         {
-            p->angles[mirror_y_idx].x = (uint8_t)(255 - p->angles[from_idx].x);
-            p->angles[mirror_y_idx].y = p->angles[from_idx].y;
+            c->angles[mirror_y_idx].xy[0] = c->angles[from_idx].xy[0];
+            c->angles[mirror_y_idx].xy[1] = (uint8_t)(255 - c->angles[from_idx].xy[1]);
         }
     }
 
@@ -321,40 +344,83 @@ static void cmd_mirror(uint8_t argc, char** argv)
 /* -------------------------------------------------------------------------- */
 static void cmd_clamp(uint8_t argc, char** argv)
 {
-    if (argc < 2)
+    struct config* c = config_get();
+
+    if (argc == 2)
     {
-        uart_printf(REDC("Error: ") "Expected <x> and <y> arguments");
+        c->dac_clamp.xy[0] = u8_atoi(argv[0]);
+        c->dac_clamp.xy[1] = u8_atoi(argv[1]);
+
+        c->enable.normal_mode = NORMAL_MODE_CLAMP;
+    }
+    else if (argc != 0)
+    {
+        uart_printf(REDC("\r\nError: ") "Wrong number of arguments");
         return;
     }
-    dac_set_clamp_threshold(
-        u8_atoi(argv[0]),
-        u8_atoi(argv[1]));
+
+    uart_printf("\r\nX: " CYANC("%u") "\r\nY: " CYANC("%u"),
+        c->dac_clamp.xy[0],
+        c->dac_clamp.xy[1]);
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_quantize(uint8_t argc, char** argv)
 {
-    
+    struct config* c = config_get();
+
+    static const char* table[] = {
+        "Quantize to 4 cardinal directions",
+        "Quantize to 4 diagonal directions (45" DEGREES ")",
+        "Quantize to 8 directions (45" DEGREES " increments)",
+        "Quantize to 8 directions, but diagonals favor utilt and dtilt angles",
+        "Quantize to 12 directions"
+    };
+
+    if (argc == 1)
+    {
+        uint8_t i = u8_atoi(argv[0]);
+        if (i < 1 || i > 5)
+        {
+            uart_printf(REDC("\r\nError: ") "Invalid index");
+            return;
+        }
+
+        c->enable.normal_mode = NORMAL_MODE_QUANTIZE;
+        c->dac_quantize.mode = (enum quantize_mode)(i - 1);
+    }
+    else if (argc != 0)
+    {
+        uart_printf(REDC("\r\nError: ") "Wrong number of arguments");
+        return;
+    }
+    else
+    {
+        for (uint8_t i = 0; i != 5; ++i)
+            uart_printf("\r\n  " PAREN1("%u", GREEN) " %s",
+                i + 1,
+                table[i]);
+    }
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_save(uint8_t argc, char** argv)
 {
-    param_save_to_nvm();
-    uart_printf("\r\nValues written to NVM");
+    config_save_to_nvm();
+    uart_printf(GREENC("\r\nSuccess: ") "Values written to NVM");
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_discard(uint8_t argc, char** argv)
 {
-    param_load_from_nvm();
-    uart_printf("\r\nValues loaded from NVM");
+    config_load_from_nvm();
+    uart_printf(GREENC("\r\nSuccess: ") "Values loaded from NVM");
 }
 
 /* -------------------------------------------------------------------------- */
 static void cmd_defaults(uint8_t argc, char** argv)
 {
-    param_set_defaults();
+    config_set_defaults();
     uart_printf("\r\nDefault values set\r\n" CYANC("Note: ") "Use " GREENC("save") " if you want to keep default values");
 }
 
@@ -390,8 +456,8 @@ void log_adc(void)
         return;
 
     uart_printf("\r\n" CYANC("X: ") "%u" "\x1b[K\r\n" CYANC("Y: ") "%u\x1b[K\x1b[2A",
-        joy_x(), 
-        joy_y());
+        adc_joy_xy()[0], 
+        adc_joy_xy()[1]);
 
     /* Restore cursor to where it was before printing our log message */
     set_cursor_h(cursor_idx);
@@ -419,10 +485,10 @@ void log_joy(enum joy_state states[3])
     log_unskip_other_log_outputs(LOG_JOY);
     set_cursor_h(cursor_idx);
 }
-void log_seq(enum cmd_seq seq)
+void log_seq(enum seq seq)
 {
     uint8_t i;
-    static enum cmd_seq seq_history[3];
+    static enum seq seq_history[3];
 
     if (!(log_category & LOG_SEQ_MASK))
         return;
@@ -437,8 +503,10 @@ void log_seq(enum cmd_seq seq)
     i = 3;
     while (i--)
     {
-        enum cmd_seq s = seq_history[i];
-        uart_printf("\r\n" GREENC("%u: ") "%s\x1b[K", i, sequence_name_table[s]);
+        enum seq s = seq_history[i];
+        uart_printf("\r\n" GREENC("%u: ") "%s\x1b[K", 
+                i, 
+                s == SEQ_NONE ? "none" : sequence_name_table[s]);
     }
     uart_printf("\x1b[3A");
 

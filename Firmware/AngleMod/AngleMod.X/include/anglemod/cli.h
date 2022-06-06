@@ -6,7 +6,7 @@
 #ifndef CLI_H
 #define	CLI_H
 
-#define CLI_LINE_LEN 15
+#define CLI_LINE_LEN 16
 #define CLI_HISTORY_LEN 8
 #define CLI_USE_COLOR
 

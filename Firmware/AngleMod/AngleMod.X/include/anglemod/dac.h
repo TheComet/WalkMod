@@ -6,15 +6,13 @@
 #ifndef DAC_H
 #define	DAC_H
 
-#include "anglemod/cmd_seq.h"
+#include "anglemod/seq.h"
 #include <stdint.h>
 
 void dac_init(void);
 
-void dac_set_clamp_threshold(uint8_t x, uint8_t y);
-
 void dac_override_disable(void);
-void dac_override_clamp(uint8_t x, uint8_t y);
-void dac_override_sequence(enum cmd_seq seq);
+void dac_override_clamp(const uint8_t xy[2]);
+void dac_override_sequence(enum seq seq);
 
 #endif	/* DAC_H */

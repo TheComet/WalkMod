@@ -1,7 +1,6 @@
 #include "anglemod/btn.h"
 #include <xc.h>
 
-
 enum state_bits
 {
     NONE = 0x00,
