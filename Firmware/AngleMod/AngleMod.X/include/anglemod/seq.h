@@ -6,17 +6,17 @@
 #ifndef CMD_SEQ_H
 #define	CMD_SEQ_H
 
-#include <stdint.h>
+#include "anglemod/cli.h"
 
-#if 0
-#   define ARROW_W  "\xF0\x9F\xA1\xA0"
-#   define ARROW_N  "\xF0\x9F\xA1\xA1"
-#   define ARROW_E  "\xF0\x9F\xA1\xA2"
-#   define ARROW_S  "\xF0\x9F\xA1\xA3"
-#   define ARROW_NW "\xF0\x9F\xA1\xA4"
-#   define ARROW_NE "\xF0\x9F\xA1\xA5"
-#   define ARROW_SE "\xF0\x9F\xA1\xA6"
-#   define ARROW_SW "\xF0\x9F\xA1\xA7"
+#if defined (CLI_USE_UNICODE)
+#   define ARROW_W  "\xE2\x86\x90"
+#   define ARROW_N  "\xE2\x86\x91"
+#   define ARROW_E  "\xE2\x86\x92"
+#   define ARROW_S  "\xE2\x86\x93"
+#   define ARROW_NW "\xE2\x86\x96"
+#   define ARROW_NE "\xE2\x86\x97"
+#   define ARROW_SE "\xE2\x86\x98"
+#   define ARROW_SW "\xE2\x86\x99"
 #else
 #   define ARROW_W  " W"
 #   define ARROW_N  " N"

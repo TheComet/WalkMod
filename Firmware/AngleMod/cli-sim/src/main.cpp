@@ -69,7 +69,7 @@ void JoystickToADC(void)
 
 int main(int argc, char** argv)
 {
-    HANDLE hPort = CreateFileA("\\\\.\\COM6", GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
+    HANDLE hPort = CreateFileA("\\\\.\\COM8", GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
     if (hPort == INVALID_HANDLE_VALUE)
         return -1;
 
@@ -79,6 +79,7 @@ int main(int argc, char** argv)
     cc.dcb.fRtsControl = RTS_CONTROL_DISABLE;
     cc.dcb.fOutxCtsFlow = FALSE;
     cc.dcb.fOutxDsrFlow = FALSE;
+    cc.dcb.ByteSize = 8;
     SetCommState(hPort, &cc.dcb);
 
     char readBuf[1];

@@ -10,7 +10,12 @@
 #include <assert.h>
 
 #define PROMPT "> "
-#define DEGREES "d"
+
+#if defined (CLI_USE_UNICODE)
+#   define DEGREES "\xC2\xB0"
+#else
+#   define DEGREES "d"
+#endif
 
 #if defined (CLI_USE_COLOR)
 #define CLEAR(x)    "\x1b[0m"    x
@@ -96,17 +101,17 @@ struct cli_cmd {
 };
 
 static struct cli_cmd commands[] = {
-    {"help", "", "Print help", cmd_help},
-    {"toggle", "<index>", "Enable/disable different modes", cmd_toggle},
-    {"joy", "<xy value> [hysteresis]", "Configure how the joystick is converted into directions", cmd_joy},
-    {"angle", "<index> <angle|<x> <y>>", "Configure angles for command inputs", cmd_angle},
-    {"mirror", "<index> <x|y|xy>", "Mirrors the coordinates across the X or Y axis", cmd_mirror},
-    {"clamp", "<x> <y>", "Set the clamp threshold for normal mode", cmd_clamp},
-    {"quantize", "", "", cmd_quantize},
-    {"save", "", "Save changes to non-volatile memory", cmd_save},
-    {"load", "", "Load values from non-volatile memory, discarding any changes", cmd_discard},
-    {"defaults", "", "Set default values", cmd_defaults},
-    {"log", "<all|off|adc|joy|seq|dac>", "Log values in real-time", cmd_log},
+    {"help", "", "Print help.", cmd_help},
+    {"joy", "<xy value> [hysteresis]", "Configure how the joystick is converted into directions.", cmd_joy},
+    {"toggle", "<index>", "Enable/disable individual angles and modes.", cmd_toggle},
+    {"angle", "<index> <angle|<x> <y>>", "Configure the individual angles for command inputs.", cmd_angle},
+    {"mirror", "<index> <x|y|xy>", "Mirrors the coordinates across the X or Y axis.", cmd_mirror},
+    {"clamp", "<x> <y>", "Set the clamp threshold for normal mode.", cmd_clamp},
+    {"quantize", "<mode>", "Set the quantization mode for normal mode.", cmd_quantize},
+    {"save", "", "Save changes to non-volatile memory.", cmd_save},
+    {"load", "", "Load values from non-volatile memory, discarding any changes.", cmd_discard},
+    {"defaults", "", "Set default values.", cmd_defaults},
+    {"log", "<all|off|adc|joy|seq|dac>", "Log values in real-time. Useful for debugging.", cmd_log},
     {NULL}
 };
 
@@ -180,13 +185,12 @@ static void print_angles_and_toggle_states()
         uint8_t item_idx = i & 0x07;
         if (item_idx == 0)
             uart_printf(MAGENTAC("\r\n%s:"), category_name_table[cat_idx]);
-        uart_printf("\r\n  (\x1b[1;3%cm%c%u\x1b[0m) %s :  " YELLOWC("%u") "," YELLOWC("%u") " " PAREN1("%u" DEGREES, CYAN),
-                (c->enable.bytes[cat_idx] & (1 << item_idx)) ? '2' : '1',
-                'b' + cat_idx,
-                item_idx + 1,
-                sequence_name_table[i],
-                c->angles[i].xy[0], c->angles[i].xy[1],
-                (uint8_t)fpatan2((int8_t)(c->angles[i].xy[1]-127), (int8_t)(c->angles[i].xy[0]-127)));
+        uart_printf("\r\n  (\x1b[1;3%cm%c%u\x1b[0m) %s :  " YELLOWC("%u") "," YELLOWC("%u"),
+            (c->enable.bytes[cat_idx] & (1 << item_idx)) ? '2' : '1',
+            'b' + cat_idx,
+            item_idx + 1,
+            sequence_name_table[i],
+            c->angles[i].xy[0], c->angles[i].xy[1]);
     }
 }
 
@@ -831,7 +835,8 @@ static void cli_putc_normal(char c)
         cli_putc = cli_putc_escape;
         break;
 
-    case 0x7F:  /* DEL (backspace) */
+    case '\b':  /* BS (backspace) */
+    case 0x7F:  /* DEL (also gets sent when backspace is pressed in some terminals) */
         if (cursor_idx == 0)  /* Can't erase stuff at beginning */
             break;
 
