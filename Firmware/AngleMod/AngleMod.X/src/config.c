@@ -8,56 +8,40 @@
 
 static struct config config;
 
-/* -------------------------------------------------------------------------- */
-void config_load_from_nvm(void)
+static const struct config default_config =
+#if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 {
-    uint8_t* data_start = (uint8_t*)&config;
-    uint8_t* data_end = (uint8_t*)&config + sizeof(config);
-    
-    /* Address of last row? (0x3FE0 - 0x3FFF is 32 14-bit words right? */
-    /* This is where we will save the structure */
-    uint16_t saf_addr = 0x3FE0;
-    
-    while (data_start != data_end)
-    {
-        NVMCON1bits.NVMREGS = 0;  /* Point to PFM (instead of config) */
-        NVMADR = saf_addr;        /* Address of word to read */
-        NVMCON1bits.RD = 1;       /* Initiate read cycle */
-        *data_start = NVMDATL;
-        
-        data_start++;
-        saf_addr++;
+    .magic = 0xAA,
+    .enable = {
+        .cardinal_angles = 0xFF,
+        .diagonal_angles = 0xFF,
+        .special_angles = 0x1F,
+        .normal_mode = NORMAL_MODE_CLAMP
+    },
+    .joy = {
+        .xythreshold = 42,
+        .hysteresis = 14
+    },
+    .dac_clamp = {
+        .xy = {41, 41}
+    },
+    .dac_quantize = {
+        .mode = QUANTIZE_8_UTILTS
+    },
+    .angles = {
+#define X(name, mirrx, mirry, str, initx, inity) {initx, inity},
+        SEQ_LIST
+#undef X
     }
-    
-    /* See if the data we read makes any sense. If not, load the struct with
-     * default values */
-    if (config.magic != 0xAA)
-    {
-        config_set_defaults();
-    }
-}
+};
+#else
+{};
+#endif
 
 /* -------------------------------------------------------------------------- */
 void config_set_defaults(void)
 {
-    config.enable.normal_mode = NORMAL_MODE_CLAMP;
-    config.enable.cardinal_angles = 0xFF;
-    config.enable.diagonal_angles = 0xFF;
-    config.enable.special_angles = 0x1F;
-
-    config.joy.xythreshold = 42;
-    config.joy.hysteresis = 30;
-
-    config.dac_clamp.xy[0] = 41;
-    config.dac_clamp.xy[1] = 41;
-
-    config.dac_quantize.mode = QUANTIZE_8_UTILTS;
-
-#define X(name, mirrx, mirry, str, init_x, init_y) \
-    config.angles[SEQ_##name].xy[0] = init_x; \
-    config.angles[SEQ_##name].xy[1] = init_y;
-    SEQ_LIST
-#undef X
+    config = default_config;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -67,46 +51,93 @@ struct config* config_get(void)
 }
 
 /* -------------------------------------------------------------------------- */
-void config_save_to_nvm(void)
+void config_load_from_nvm(void)
 {
-    const uint8_t* data_start = (uint8_t*)&config;
-    const uint8_t* data_end = (uint8_t*)&config + sizeof(config);
+    uint8_t* data_start = (uint8_t*)&config;
+    uint8_t* data_end = (uint8_t*)&config + sizeof(config);
+
+    /* 
+     * Config structure is 58 bytes -> need 2 rows in SAF to store it.
+     * 
+     * SAF spans 128 words from 0x3F80 - 0x3FFF, where 1 row consists of 32 14-bit
+     * program memory words.
+     * First row is  0x3FC0-0x3FDF
+     * Second row is 0x3FE0-0x3FFF
+     */
     
-    /* 1 row consists of 32 14-bit program memory words. */
-    /* SAF spans 128 words from 0x3F80 - 0x3FFF */
+    NVMCON1 = 0;  /* Point to PFM (instead of config) */
+
+    uint8_t saf_addr_l = 0xC0;  /* Begin reading at 0x3FC0 */
+    while (data_start != data_end)
+    {
+        NVMADRH = 0x3F;           /* Address of word to read (high byte) */
+        NVMADRL = saf_addr_l;     /* Address of word to read (low byte) */
+        NVMCON1bits.RD = 1;       /* Initiate read cycle */
+        *data_start = NVMDATL;
+        
+        data_start++;
+        saf_addr_l++;
+    }
     
-    /* Address of last row? (0x3FE0 - 0x3FFF is 32 14-bit words right? */
-    /* This is where we will save the structure */
-    uint16_t saf_addr = 0x3FE0;
-    
-    INTCONbits.GIE = 0;
-    
-    NVMCON1bits.NVMREGS = 0;  /* Point to PFM (instead of config) */
-    NVMADR = saf_addr;        /* Specify beginning of PFM row to erase */
-    NVMCON1bits.FREE = 1;     /* Specify an erase operation */
-    NVMCON1bits.WREN = 1;     /* Allow erase cycle */
-    
+    /* See if the data we read makes any sense. If not, load the struct with
+     * default values */
+    if (config.magic != 0xAA)
+        config_set_defaults();
+}
+
+/* -------------------------------------------------------------------------- */
+static void write_byte(uint8_t saf_addr_l, uint8_t byte)
+{
+    NVMADRH = 0x3F;           /* Specify beginning of PFM row to erase (high byte) */
+    NVMADRL = saf_addr_l;     /* Specify beginning of PFM row to erase (low byte) */
+    NVMDATL = byte;
+
     /* Unlock sequence */
     NVMCON2 = 0x55;
     NVMCON2 = 0xAA;
     NVMCON1bits.WR = 1;
-    
-    NVMCON1bits.LWLO = 1;     /* Load write latches */
-    while (data_start != data_end)
+}
+
+/* -------------------------------------------------------------------------- */
+static void write_row(uint8_t saf_addr_l, const uint8_t* data)
+{
+    for (uint8_t i = 0; i != 32; ++i)
     {
-        NVMADR = saf_addr;
-        NVMDATL = *data_start;
-        NVMCON2 = 0x55;
-        NVMCON2 = 0xAA;
-        NVMCON1bits.WR = 1;
-        
-        saf_addr++;
-        data_start++;
+        /* Last word in row? */
+        if (i == 31)
+            NVMCON1bits.LWLO = 0;  /* Next write command will write to PFM */
+
+        write_byte(saf_addr_l++, *data++);
     }
+}
+
+/* -------------------------------------------------------------------------- */
+void config_save_to_nvm(void)
+{
+    /*
+     * Config structure is 58 bytes -> need 2 rows in SAF to store it.
+     *
+     * SAF spans 128 words from 0x3F80 - 0x3FFF, where 1 row consists of 32 14-bit
+     * program memory words.
+     * First row is  0x3FC0-0x3FDF
+     * Second row is 0x3FE0-0x3FFF
+     */
     
-    /* Since our struct fits into just one row, can write it outside of the loop */
-    NVMCON1bits.LWLO = 0;  /* Start PFM write */
+    INTCONbits.GIE = 0;  /* Disable interrupts */
     
-    NVMCON1bits.WREN = 0;  /* Disable writes */
+    /* Erase 64 bytes in SAF from 0x3FC0-0x3FFF */
+    NVMCON1 = 0x14;  /* NVMREGS=0 (PFM), LWLO=0, FREE=1, WREN=1 */
+    write_byte(0xC0, 0);   /* Erase 0x3FC0-0x3FDF */
+    NVMCON1 = 0x14;  /* NVMREGS=0 (PFM), LWLO=0, FREE=1, WREN=1 */
+    write_byte(0xE0, 0);   /* Erase 0x3FE0-0x3FFF */
+
+    /* Write config structure */
+    const uint8_t* data = (uint8_t*)&config;
+    NVMCON1 = 0x24;  /* NVMREGS=0 (PFM), LWLO=1, FREE=0, WREN=1 */
+    write_row(0xC0, data);
+    NVMCON1 = 0x24;  /* NVMREGS=0 (PFM), LWLO=1, FREE=0, WREN=1 */
+    write_row(0xE0, data + 32);
+    
+    NVMCON1 = 0;           /* Disable writes */
     INTCONbits.GIE = 1;    /* Enable interrupts */
 }

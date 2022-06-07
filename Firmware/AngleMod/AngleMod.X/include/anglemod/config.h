@@ -34,6 +34,7 @@ struct config
             unsigned diagonal_angles : 8;
             unsigned special_angles  : 8;
             unsigned normal_mode     : 2;  /* 00 = OFF, 01 = clamp, 10 = quantize */
+            unsigned _padding        : 6;
         };
         uint8_t bytes[4];
     } enable;
@@ -82,6 +83,8 @@ struct config
     struct {
         uint8_t xy[2];
     } angles[24];
+
+    uint8_t _padding[6];
 };
 
 void config_load_from_nvm(void);

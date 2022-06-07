@@ -42,7 +42,10 @@ volatile struct PIE0bits PIE0bits;
 volatile struct INTCONbits INTCONbits;
 volatile struct NVMCON1bits NVMCON1bits;
 
-volatile uint16_t NVMADR;
+volatile uint16_t NVMADR; 
+volatile uint8_t NVMADRL;
+volatile uint8_t NVMADRH;
+volatile uint8_t NVMCON1;
 volatile uint8_t NVMCON2;
 volatile uint8_t NVMDATL;
 
