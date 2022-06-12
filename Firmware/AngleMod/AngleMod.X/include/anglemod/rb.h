@@ -1,6 +1,6 @@
 /*!
  * @file rb.h
- * @author Alex Murray
+ * @author TheComet
  * @brief Macros for defining a ring buffer.
  *
  * The ring buffer consists of a read and write index, and a chunk of memory:
@@ -19,7 +19,6 @@
 #ifndef RB_H
 #define	RB_H
 
-#include <stdint.h>
 #include <string.h>
 
 #define RB_DECLARE_API(name, T, S)                                            \
