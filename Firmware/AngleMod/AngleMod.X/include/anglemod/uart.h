@@ -8,6 +8,7 @@
 
 #include "anglemod/rb.h"
 #include <string.h>
+#include <stdint.h>
 
 #define TX_BUF_SIZE 64u
 #define RX_BUF_SIZE 8u

@@ -3,9 +3,11 @@
 #include "anglemod/config.h"
 #include "anglemod/log.h"
 
+#include "anglemod/uart.h"
+
 static uint8_t dac01_write_buf[6] = {
     0x00, 0x00, 0x00, /* DAC0 */
-    0x01, 0x00, 0x00  /* DAC1 */
+    0x08, 0x00, 0x00  /* DAC1 */
 };
 
 /* -------------------------------------------------------------------------- */
@@ -39,10 +41,10 @@ static void dac_buf_transfer(void)
     for (i = 0; i != 6; ++i)
     {    
         SSP1BUF = dac01_write_buf[i]; /* Byte to transfer */
-        while (SSP1STATbits.BF) {}    /* Wait for transmit complete */
+        while (!SSP1STATbits.BF) {}   /* Wait for transmit complete */
         (void)SSP1BUF;                /* Reading received byte resets BF flag */
     }
-    
+
     gpio_deselect_dac();
 
     /* Need to wait at least 96ns between latches. We're waiting 7.5us here */

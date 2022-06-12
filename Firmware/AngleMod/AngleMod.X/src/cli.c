@@ -106,7 +106,7 @@ static struct cli_cmd commands[] = {
     {"toggle", "<index>", "Enable/disable individual angles and modes.", cmd_toggle},
     {"angle", "<index> <angle|<x> <y>>", "Configure the individual angles for command inputs.", cmd_angle},
     {"mirror", "<index> <x|y|xy>", "Mirrors the coordinates across the X or Y axis.", cmd_mirror},
-    {"clamp", "<x> <y>", "Set the clamp threshold for normal mode.", cmd_clamp},
+    {"clamp", "<x> [y]", "Set the clamp threshold for normal mode. If only X is specified, then Y will be set to the same value as well.", cmd_clamp},
     {"quantize", "<mode>", "Set the quantization mode for normal mode.", cmd_quantize},
     {"save", "", "Save changes to non-volatile memory.", cmd_save},
     {"load", "", "Load values from non-volatile memory, discarding any changes.", cmd_discard},
@@ -350,10 +350,10 @@ static void cmd_clamp(uint8_t argc, char** argv)
 {
     struct config* c = config_get();
 
-    if (argc == 2)
+    if (argc > 0)
     {
         c->dac_clamp.xy[0] = u8_atoi(argv[0]);
-        c->dac_clamp.xy[1] = u8_atoi(argv[1]);
+        c->dac_clamp.xy[1] = argc > 1 ? u8_atoi(argv[1]) : c->dac_clamp.xy[0];
 
         c->enable.normal_mode = NORMAL_MODE_CLAMP;
     }

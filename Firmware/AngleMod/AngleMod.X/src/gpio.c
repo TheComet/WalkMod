@@ -43,6 +43,12 @@ void gpio_init(void)
     ANSELB = 0xE0;  /* JOYX, JOYY and RB7 are analog */
     ANSELC = 0x00;  /* All are digital */
     
+    WPUC = 0x01;    /* MISO pin is high impedance and the signal exponentially 
+                     * decays to 0V after each transmission over quite a long
+                     * period of time. This prevents this behavior since the
+                     * datasheet notes that any analog voltages on digital inputs
+                     * could cause excess current to flow */
+    
     /* Digital output re-mappings using PPS registers */
     RC1PPS = 0x07;  /* Maps SCK1 to RC1 */
     RC2PPS = 0x08;  /* Maps SDO1 to RC2 */
