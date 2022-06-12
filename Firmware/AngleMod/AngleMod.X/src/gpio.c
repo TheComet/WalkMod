@@ -25,20 +25,20 @@
 void gpio_init(void)
 {
     /* Configure all GPIO pins */
-    PORTA  = 0x00;  /* Clear port bits */
+    PORTA  = 0x04;  /* nLAT=1 by default */
     LATA   = 0x00;  /* Clear port latch bits */
     TRISA  = 0x18;  /* BTN and nMCLR are inputs (set to 1).
                      * nMCLR must be input. Rest are outputs. */
-    
-    PORTB  = 0x00;  /* Clear port bits */
+
+    PORTB  = 0x10;  /* nCS=1 by default */
     LATB   = 0x00;  /* Clear port latch bits */
     TRISB  = 0xE0;  /* JOYX, JOYY and RB7 are inputs. */
-    
+
     PORTC  = 0x00;  /* Clear port bits */
     LATC   = 0x00;  /* Clear port latch bits */
     TRISC  = 0x81;  /* SWX and SWY are digital outputs, MISO and RX are digital 
                      * inputs */
-    
+
     ANSELA = 0x00;  /* Set to digital IO (default is analog) */
     ANSELB = 0xE0;  /* JOYX, JOYY and RB7 are analog */
     ANSELC = 0x00;  /* All are digital */
@@ -48,15 +48,17 @@ void gpio_init(void)
                      * period of time. This prevents this behavior since the
                      * datasheet notes that any analog voltages on digital inputs
                      * could cause excess current to flow */
-    
+
     /* Digital output re-mappings using PPS registers */
     RC1PPS = 0x07;  /* Maps SCK1 to RC1 */
     RC2PPS = 0x08;  /* Maps SDO1 to RC2 */
     RC6PPS = 0x05;  /* Maps TX1 to RC6 */
-    
+
     /* Digital input re-mappings using PPS registers.
      * Note the format is PORT[5:3] PIN[2:0] */
     INTPPS     = 0x04;  /* Use external interrupt for BTN input. RA4 -> PORT[5:3] = 000, PIN[2:0] = 100 */
     SSP1DATPPS = 0x10;  /* MISO. RC0 -> PORT[5:3] = 010, PIN[2:0] = 000 */
+    /*SSP1CLKPPS = 0x11;  * SCK. RC1 -> PORT[5:3] = 010, PIN[2:0] = 001 */
+    SSP1SSPPS  = 0x05;  /* nSS. RA5 -> PORT[5:3] = 000, PIN[2:0] = 101 */
     RX1PPS     = 0x17;  /* RX. RC7 -> PORT[5:3] = 010, PIN[2:0] = 111 */
 }
