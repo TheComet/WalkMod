@@ -2,6 +2,7 @@
 
 volatile struct PIR0bits PIR0bits;
 volatile struct PIR1bits PIR1bits;
+volatile struct PIE0bits PIE0bits;
 volatile struct PIE1bits PIE1bits;
 volatile struct PORTAbits PORTAbits;
 volatile struct PORTBbits PORTBbits;
@@ -37,10 +38,11 @@ volatile struct T0CON0bits T0CON0bits;
 volatile struct T0CON1bits T0CON1bits;
 
 volatile uint8_t TMR0H;
+volatile uint8_t T0CON1;
 
-volatile struct PIE0bits PIE0bits;
 volatile struct INTCONbits INTCONbits;
 volatile struct NVMCON1bits NVMCON1bits;
+volatile uint8_t INTCON;
 
 volatile uint16_t NVMADR; 
 volatile uint8_t NVMADRL;
@@ -49,6 +51,9 @@ volatile uint8_t NVMCON1;
 volatile uint8_t NVMCON2;
 volatile uint8_t NVMDATL;
 
+volatile uint8_t SP1BRG;
+volatile uint8_t TX1STA;
+volatile uint8_t RC1STA;
 volatile uint8_t TX1REG;
 volatile uint8_t RC1REG;
 
@@ -57,3 +62,6 @@ volatile uint8_t SSP1BUF;
 volatile uint8_t SSP1CON1;
 
 volatile uint8_t ADRESH;
+volatile uint8_t ADCON0;
+volatile uint8_t ADCON1;
+volatile uint8_t ADACT;

@@ -18,7 +18,6 @@ set (PIC16_SOURCES
 	"../AngleMod.X/src/gpio.c"
 	"../AngleMod.X/src/joy.c"
 	"../AngleMod.X/src/math.c"
-	"../AngleMod.X/src/osc.c"
 	"../AngleMod.X/src/rb.c"
 	"../AngleMod.X/src/seq.c"
 	"../AngleMod.X/src/uart.c"
@@ -32,7 +31,6 @@ set (PIC16_HEADERS
 	"../AngleMod.X/include/anglemod/gpio.h"
 	"../AngleMod.X/include/anglemod/joy.h"
 	"../AngleMod.X/include/anglemod/math.h"
-	"../AngleMod.X/include/anglemod/osc.h"
 	"../AngleMod.X/include/anglemod/rb.h"
 	"../AngleMod.X/include/anglemod/seq.h"
 	"../AngleMod.X/include/anglemod/uart.h")

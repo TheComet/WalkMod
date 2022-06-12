@@ -2,16 +2,14 @@
 #include "anglemod/seq.h"
 #include <xc.h>
 
-#if !defined(CLI_SIM) && !defined(GTEST_TESTING)
-#pragma config SAFEN = 0
-#endif
+#define MAGIC 0xAA
 
 static struct config config;
 
 static const struct config default_config =
 #if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 {
-    .magic = 0xAA,
+    .magic = MAGIC,
     .enable = {
         .cardinal_angles = 0xFF,
         .diagonal_angles = 0xFF,
@@ -59,18 +57,18 @@ void config_load_from_nvm(void)
     /* 
      * Config structure is 58 bytes -> need 2 rows in SAF to store it.
      * 
-     * SAF spans 128 words from 0x3F80 - 0x3FFF, where 1 row consists of 32 14-bit
+     * SAF spans 128 words from 0x1F80 - 0x1FFF, where 1 row consists of 32 14-bit
      * program memory words.
-     * First row is  0x3FC0-0x3FDF
-     * Second row is 0x3FE0-0x3FFF
+     * First row is  0x1FC0-0x1FDF
+     * Second row is 0x1FE0-0x1FFF
      */
     
     NVMCON1 = 0;  /* Point to PFM (instead of config) */
 
-    uint8_t saf_addr_l = 0xC0;  /* Begin reading at 0x3FC0 */
+    uint8_t saf_addr_l = 0xC0;  /* Begin reading at 0x1FC0 */
     while (data_start != data_end)
     {
-        NVMADRH = 0x3F;           /* Address of word to read (high byte) */
+        NVMADRH = 0x1F;           /* Address of word to read (high byte) */
         NVMADRL = saf_addr_l;     /* Address of word to read (low byte) */
         NVMCON1bits.RD = 1;       /* Initiate read cycle */
         *data_start = NVMDATL;
@@ -81,14 +79,14 @@ void config_load_from_nvm(void)
     
     /* See if the data we read makes any sense. If not, load the struct with
      * default values */
-    if (config.magic != 0xAA)
+    if (config.magic != MAGIC)
         config_set_defaults();
 }
 
 /* -------------------------------------------------------------------------- */
 static void write_byte(uint8_t saf_addr_l, uint8_t byte)
 {
-    NVMADRH = 0x3F;           /* Specify beginning of PFM row to erase (high byte) */
+    NVMADRH = 0x1F;           /* Specify beginning of PFM row to erase (high byte) */
     NVMADRL = saf_addr_l;     /* Specify beginning of PFM row to erase (low byte) */
     NVMDATL = byte;
 
@@ -112,24 +110,26 @@ static void write_row(uint8_t saf_addr_l, const uint8_t* data)
 }
 
 /* -------------------------------------------------------------------------- */
-void config_save_to_nvm(void)
+uint8_t config_save_to_nvm(void)
 {
+    uint8_t success;
+    
     /*
      * Config structure is 58 bytes -> need 2 rows in SAF to store it.
      *
-     * SAF spans 128 words from 0x3F80 - 0x3FFF, where 1 row consists of 32 14-bit
+     * SAF spans 128 words from 0x1F80 - 0x1FFF, where 1 row consists of 32 14-bit
      * program memory words.
-     * First row is  0x3FC0-0x3FDF
-     * Second row is 0x3FE0-0x3FFF
+     * First row is  0x1FC0-0x1FDF
+     * Second row is 0x1FE0-0x1FFF
      */
     
     INTCONbits.GIE = 0;  /* Disable interrupts */
     
-    /* Erase 64 bytes in SAF from 0x3FC0-0x3FFF */
+    /* Erase 64 bytes in SAF from 0x1FC0-0x1FFF */
     NVMCON1 = 0x14;  /* NVMREGS=0 (PFM), LWLO=0, FREE=1, WREN=1 */
-    write_byte(0xC0, 0);   /* Erase 0x3FC0-0x3FDF */
+    write_byte(0xC0, 0);   /* Erase 0x1FC0-0x1FDF */
     NVMCON1 = 0x14;  /* NVMREGS=0 (PFM), LWLO=0, FREE=1, WREN=1 */
-    write_byte(0xE0, 0);   /* Erase 0x3FE0-0x3FFF */
+    write_byte(0xE0, 0);   /* Erase 0x1FE0-0x1FFF */
 
     /* Write config structure */
     const uint8_t* data = (uint8_t*)&config;
@@ -138,6 +138,10 @@ void config_save_to_nvm(void)
     NVMCON1 = 0x24;  /* NVMREGS=0 (PFM), LWLO=1, FREE=0, WREN=1 */
     write_row(0xE0, data + 32);
     
+    success = !NVMCON1bits.WRERR;
+    
     NVMCON1 = 0;           /* Disable writes */
     INTCONbits.GIE = 1;    /* Enable interrupts */
+    
+    return success;
 }

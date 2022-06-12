@@ -6,7 +6,6 @@
  */
 #include <xc.h>
 
-#include "anglemod/osc.h"
 #include "anglemod/gpio.h"
 #include "anglemod/uart.h"
 #include "anglemod/adc.h"
@@ -20,11 +19,26 @@
 
 #if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 
-// We're operating at 3.3V
+/* Disable external oscillator */
+#pragma config FEXTOSC = 0x01
+
+/* Use HFINTOSC with FRQ = 32 MHz when starting */
+#pragma config RSTOSC = 0
+
+/* Don't output clock on RA4 */
+#pragma config CLKOUTEN = 1
+
+/* We're operating at 3.3V */
 #pragma config VDDAR = 0
 
-// Disable watchdog
+/* Disable watchdog */
 #pragma config WDTE = 0
+
+/* Disable stack overflow/underflow reset */
+#pragma config STVREN = 0
+
+/* Enable Storage Area Flash (0=enable) - We save our config struct here */
+#pragma config SAFEN = 0
 
 #endif
 
@@ -38,7 +52,6 @@ void pic16_init(void)
 #endif
 {
     /* Init system-level stuff */
-    osc_init();
     gpio_init();
     uart_init();
     adc_init();
@@ -51,7 +64,7 @@ void pic16_init(void)
     dac_init();
 
     /* Enable interrupts */
-    INTCONbits.GIE = 1;
+    INTCON = 0xC0;  /* GIE=1, PEIE=1, INTEDG=0 (falling edge on INT pin) */
 }
 
 /* -------------------------------------------------------------------------- */
@@ -101,6 +114,7 @@ void pic16_process_events(void)
         cli_putc(c);
 }
 
+
 /* -------------------------------------------------------------------------- */
 #if !defined(CLI_SIM) && !defined(GTEST_TESTING)
 void main(void)
@@ -109,10 +123,12 @@ void main(void)
 
     while (1)
     {
-        process_events();
-        
+#if 0
         SLEEP();
         NOP();  /* Instruction following sleep instruction is always executed */
+#endif
+        
+        process_events();
     }
 }
 #endif
@@ -124,8 +140,6 @@ void __interrupt() isr(void)
 {
     if (IOCAF & 0x10)
         btn_ioc_isr();
-    if (PIR0bits.TMR0IF)
-        tim0_isr();
     if (PIR1bits.ADIF)
         adc_isr();
     if (PIR1bits.RC1IF)

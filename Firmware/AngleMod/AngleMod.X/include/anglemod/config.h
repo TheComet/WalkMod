@@ -89,7 +89,7 @@ struct config
 
 void config_load_from_nvm(void);
 void config_set_defaults(void);
-void config_save_to_nvm(void);
+uint8_t config_save_to_nvm(void);
 
 struct config* config_get(void);
 

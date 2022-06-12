@@ -37,7 +37,7 @@ void COMWrite(HANDLE hPort)
     {
         WriteFile(hPort, buf, len, &bytesWritten, &ov);
         GetOverlappedResult(hPort, &ov, &bytesWritten, TRUE);
-        printf("%s", buf);
+        printf("%d\n", len);
     }
 }
 
@@ -46,7 +46,6 @@ void JoystickToADC(void)
     JOYINFO ji;
     joyGetPos(0, &ji);
 
-    tim0_isr();  /* Triggers measurement of X and Y */
     ADRESH = ji.wXpos / 256;
     adc_isr();
     ADRESH = 255 - ji.wYpos / 256;
@@ -69,7 +68,7 @@ void JoystickToADC(void)
 
 int main(int argc, char** argv)
 {
-    HANDLE hPort = CreateFileA("\\\\.\\COM8", GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
+    HANDLE hPort = CreateFileA("\\\\.\\COM5", GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
     if (hPort == INVALID_HANDLE_VALUE)
         return -1;
 

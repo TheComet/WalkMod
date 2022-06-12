@@ -20,8 +20,15 @@ struct PIR1bits {
 };
 extern volatile struct PIR1bits PIR1bits;
 
+struct PIE0bits {
+	unsigned TMR0IE : 1;
+};
+extern volatile struct PIE0bits PIE0bits;
+
 struct PIE1bits {
-	uint8_t TX1IE;
+	unsigned TX1IE : 1;
+	unsigned RC1IE : 1;
+	unsigned ADIE : 1;
 };
 extern volatile struct PIE1bits PIE1bits;
 
@@ -97,26 +104,24 @@ struct T0CON1bits {
 	uint8_t ASYNC;
 };
 extern volatile struct T0CON1bits T0CON1bits;
+extern volatile uint8_t T0CON1;
 
 extern volatile uint8_t TMR0H;
-
-struct PIE0bits {
-	uint8_t TMR0IE;
-};
-extern volatile struct PIE0bits PIE0bits;
 
 struct INTCONbits {
 	uint8_t GIE;
 };
 extern volatile struct INTCONbits INTCONbits;
+extern volatile uint8_t INTCON;
 
 struct NVMCON1bits {
-	uint8_t NVMREGS;
-	uint8_t FREE;
-	uint8_t WREN;
-	uint8_t LWLO;
-	uint8_t WR;
-	uint8_t RD;
+	unsigned NVMREGS : 1;
+	unsigned FREE : 1;
+	unsigned WREN : 1;
+	unsigned LWLO : 1;
+	unsigned WR : 1;
+	unsigned RD : 1;
+	unsigned WRERR : 1;
 };
 extern volatile struct NVMCON1bits NVMCON1bits;
 
@@ -127,6 +132,9 @@ extern volatile uint8_t NVMCON1;
 extern volatile uint8_t NVMCON2;
 extern volatile uint8_t NVMDATL;
 
+extern volatile uint8_t SP1BRG;
+extern volatile uint8_t TX1STA;
+extern volatile uint8_t RC1STA;
 extern volatile uint8_t TX1REG;
 extern volatile uint8_t RC1REG;
 
@@ -138,5 +146,8 @@ extern volatile uint8_t SSP1BUF;
 extern volatile uint8_t SSP1CON1;
 
 extern volatile uint8_t ADRESH;
+extern volatile uint8_t ADCON0;
+extern volatile uint8_t ADCON1;
+extern volatile uint8_t ADACT;
 
 #endif

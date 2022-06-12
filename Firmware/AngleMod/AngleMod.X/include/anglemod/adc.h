@@ -16,7 +16,6 @@ uint8_t adc_has_new_data_get_and_clear(void);
 
 const uint8_t* adc_joy_xy(void);
 
-void tim0_isr(void);
 void adc_isr(void);
 
 #endif	/* ADC_H */

@@ -410,8 +410,10 @@ static void cmd_quantize(uint8_t argc, char** argv)
 /* -------------------------------------------------------------------------- */
 static void cmd_save(uint8_t argc, char** argv)
 {
-    config_save_to_nvm();
-    uart_printf(GREENC("\r\nSuccess: ") "Values written to NVM");
+    if (config_save_to_nvm())
+        uart_printf(GREENC("\r\nSuccess: ") "Values written to NVM");
+    else
+        uart_printf(REDC("\r\nError: ") "Write error occurred");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -520,7 +522,7 @@ void log_seq(enum seq seq)
 }
 void log_dac(uint8_t swx, uint8_t swy, const uint8_t* dac01_write_buf)
 {
-    if (!(log_category & LOG_DAC))
+    if (!(log_category & LOG_DAC_MASK))
         return;
 
     /* Skip over previous log messages if they're enabled */

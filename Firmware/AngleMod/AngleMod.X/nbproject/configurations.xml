@@ -9,7 +9,6 @@
       <itemPath>include/anglemod/dac.h</itemPath>
       <itemPath>include/anglemod/gpio.h</itemPath>
       <itemPath>include/anglemod/joy.h</itemPath>
-      <itemPath>include/anglemod/osc.h</itemPath>
       <itemPath>include/anglemod/rb.h</itemPath>
       <itemPath>include/anglemod/uart.h</itemPath>
       <itemPath>include/anglemod/log.h</itemPath>
@@ -31,7 +30,6 @@
       <itemPath>src/gpio.c</itemPath>
       <itemPath>src/joy.c</itemPath>
       <itemPath>src/main.c</itemPath>
-      <itemPath>src/osc.c</itemPath>
       <itemPath>src/uart.c</itemPath>
       <itemPath>src/rb.c</itemPath>
       <itemPath>src/math.c</itemPath>
@@ -1935,13 +1933,13 @@
         <property key="poweroptions.powerenable" value="false"/>
         <property key="programmerToGoImageName" value="AngleMod_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
-        <property key="programoptions.eraseb4program" value="false"/>
+        <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.ledbrightness" value="5"/>
         <property key="programoptions.pgcconfig" value="pull down"/>
         <property key="programoptions.pgcresistor.value" value="4.7"/>
         <property key="programoptions.pgdconfig" value="pull down"/>
         <property key="programoptions.pgdresistor.value" value="4.7"/>
-        <property key="programoptions.pgmentry.voltage" value="high"/>
+        <property key="programoptions.pgmentry.voltage" value="low"/>
         <property key="programoptions.pgmspeed" value="Med"/>
         <property key="programoptions.preservebootflash" value="false"/>
         <property key="programoptions.preservedataflash" value="false"/>
@@ -2486,13 +2484,13 @@
         <property key="poweroptions.powerenable" value="false"/>
         <property key="programmerToGoImageName" value="AngleMod_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
-        <property key="programoptions.eraseb4program" value="false"/>
+        <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.ledbrightness" value="5"/>
         <property key="programoptions.pgcconfig" value="pull down"/>
         <property key="programoptions.pgcresistor.value" value="4.7"/>
         <property key="programoptions.pgdconfig" value="pull down"/>
         <property key="programoptions.pgdresistor.value" value="4.7"/>
-        <property key="programoptions.pgmentry.voltage" value="high"/>
+        <property key="programoptions.pgmentry.voltage" value="low"/>
         <property key="programoptions.pgmspeed" value="Med"/>
         <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preservedataflash.ranges"

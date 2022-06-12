@@ -6,7 +6,12 @@
 /* -------------------------------------------------------------------------- */
 void uart_init(void)
 {
-    /* TODO */
+    SP1BRG = 12;  /* Baud rate of 38400 */
+    /*SP1BRG = 25;  * Baud rate of 19200 */
+    TX1STA = 0x20;  /* TXEN=1 (transmit enable), SYNC=0 */
+    RC1STA = 0x90;  /* SPEN=1 (serial port enable), CREN=1 */
+    
+    PIE1bits.RC1IE = 1;  /* Enable RX interrupt */
 }
 /* -------------------------------------------------------------------------- */
 void uart_putc(char c)

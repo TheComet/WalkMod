@@ -36,8 +36,8 @@ void gpio_init(void)
     
     PORTC  = 0x00;  /* Clear port bits */
     LATC   = 0x00;  /* Clear port latch bits */
-    TRISC  = 0x00;  /* SWX and SWY are digital outputs, the rest are alternate
-                     * functions. Can't hurt to set everything to output */
+    TRISC  = 0x81;  /* SWX and SWY are digital outputs, MISO and RX are digital 
+                     * inputs */
     
     ANSELA = 0x00;  /* Set to digital IO (default is analog) */
     ANSELB = 0xE0;  /* JOYX, JOYY and RB7 are analog */

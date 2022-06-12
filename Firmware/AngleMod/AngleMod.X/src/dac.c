@@ -13,7 +13,7 @@ void dac_init(void)
 {
     SSP1CON1 = 0x10;  /* CKP=1: clock polarity high when idle
                        * SSPM=0000: host mode, Fosc/4=8 MHz */
-    SSP1CON1 = 0x30;  /* SSPEN=1: Enable serial port after configuration */
+    SSP1CON1 = 0x30;  /* SSPEN=1: Enable serial port */
 }
 
 /* -------------------------------------------------------------------------- */
@@ -74,7 +74,7 @@ void dac_override_clamp(const uint8_t xy[2])
         else
             continue;  /* Skip writing to DAC */
         
-            /* Update 12-bit value to transfer to DAC in transmit buffer */
+        /* Update 12-bit value to transfer to DAC in transmit buffer */
         dac_buf_ptr[0] = dac_value >> 4;
         dac_buf_ptr[1] = (dac_value << 4) & 0xFF;
         pending_sw |= sw_bits[i];  /* Analog switch needs to be enabled after latch */
@@ -86,12 +86,10 @@ void dac_override_clamp(const uint8_t xy[2])
      * a 3.3V range
      */
     if (pending_sw)
-    {
         dac_buf_transfer();
-        
-        /* Enable/disable analog switches as needed */
-        SW_PORT = (SW_PORT & ~pending_sw) | pending_sw;
-    }
+
+    /* Enable/disable analog switches as needed */
+    SW_PORT = (SW_PORT & ~(SWX_BIT | SWY_BIT)) | pending_sw;
     
     log_dac(pending_sw & SWX_BIT, pending_sw & SWY_BIT, dac01_write_buf);
 }
