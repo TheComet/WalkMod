@@ -4,6 +4,7 @@
 
 static uint8_t adc_xy[2];
 static volatile uint8_t has_new_data = 0;
+static uint8_t log_counter = 0;
 
 /* -------------------------------------------------------------------------- */
 void adc_init(void)
@@ -28,16 +29,16 @@ void adc_init(void)
 void adc_set_fast_sampling_mode(void)
 {
     /* Roughly 500 Hz */
-    TMR0H = 2;
+    TMR0H = 1;
 }
 
 /* -------------------------------------------------------------------------- */
 void adc_set_slow_sampling_mode(void)
 {
-    /* 24 Hz should be fast enough to detect joystick command inputs
+    /* 200 Hz should be fast enough to detect joystick command inputs
      * LFOSC frequency is 31 kHz, prescaler is 32:
-     *   31 kHz / 32 / 40 = ~24 Hz */
-    TMR0H = 40;
+     *   31 kHz / 32 / 5 = ~200 Hz */
+    TMR0H = 5;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -46,7 +47,13 @@ uint8_t adc_has_new_data_get_and_clear(void)
     uint8_t result = has_new_data;
     has_new_data = 0;
     if (result)
-        log_adc();
+    {
+        if (log_counter-- == 0)
+        {
+            log_adc();
+            log_counter = 10;
+        }
+    }
     return result;
 }
 
@@ -59,6 +66,8 @@ const uint8_t* adc_joy_xy(void)
 /* -------------------------------------------------------------------------- */
 void adc_isr(void)
 {
+    PIR1bits.ADIF = 0;
+    
     /* 
      * Toggle between measuring the JOYX and JOYY signals, and set the global
      * "has new data" flag whenever we finish measuring both so the results can
@@ -76,6 +85,4 @@ void adc_isr(void)
         ADCON0 = 0x35;  /* CHS=001101 (RB5), ON=1 */
         has_new_data = 1;
     }
-    
-    PIR1bits.ADIF = 0;
 }

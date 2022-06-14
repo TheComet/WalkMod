@@ -31,9 +31,9 @@
 /* name, mirror X, mirror Y, string, initial X, intial Y */
 #define SEQ_LIST                                                      \
     /* Cardinal angles */                                             \
-    X(CARD_N_NE, CARD_N_NW, CARD_S_SE, ARROW_N ARROW_NE, 200, 231)    \
-    X(CARD_E_NE, CARD_W_NW, CARD_E_SE, ARROW_E ARROW_NE, 231, 200)    \
-    X(CARD_E_SE, CARD_W_SW, CARD_E_NE, ARROW_E ARROW_SE, 231, 55)     \
+    X(CARD_N_NE, CARD_N_NW, CARD_S_SE, ARROW_N ARROW_NE, 174, 10)     \
+    X(CARD_E_NE, CARD_W_NW, CARD_E_SE, ARROW_E ARROW_NE, 244, 80)     \
+    X(CARD_E_SE, CARD_W_SW, CARD_E_NE, ARROW_E ARROW_SE, 244, 175)    \
     X(CARD_S_SE, CARD_S_SW, CARD_N_NE, ARROW_S ARROW_SE, 200, 24)     \
     X(CARD_N_NW, CARD_N_NE, CARD_S_SW, ARROW_N ARROW_NW, 55,  231)    \
     X(CARD_W_NW, CARD_E_NE, CARD_W_SW, ARROW_W ARROW_NW, 24,  200)    \

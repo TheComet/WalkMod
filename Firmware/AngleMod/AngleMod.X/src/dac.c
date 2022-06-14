@@ -5,10 +5,12 @@
 
 #include "anglemod/uart.h"
 
-static uint8_t dac01_write_buf[6] = {
+static uint8_t dac_write_cmd[6] = {
     0x00, 0x00, 0x00, /* DAC0 */
     0x08, 0x00, 0x00  /* DAC1 */
 };
+
+static uint8_t log_counter = 0;
 
 /* -------------------------------------------------------------------------- */
 void dac_init(void)
@@ -22,7 +24,7 @@ void dac_init(void)
 void dac_override_disable(void)
 {
     gpio_clear_swxy();
-    log_dac(0, 0, dac01_write_buf);
+    log_dac(0, 0, dac_write_cmd);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -40,16 +42,16 @@ static void dac_buf_transfer(void)
     
     for (i = 0; i != 6; ++i)
     {    
-        SSP1BUF = dac01_write_buf[i]; /* Byte to transfer */
+        SSP1BUF = dac_write_cmd[i]; /* Byte to transfer */
         while (!SSP1STATbits.BF) {}   /* Wait for transmit complete */
         (void)SSP1BUF;                /* Reading received byte resets BF flag */
     }
 
     gpio_deselect_dac();
 
-    /* Need to wait at least 96ns between latches. We're waiting 7.5us here */
+    /* Need to wait at least 96ns between latches */
     gpio_latch_dac();
-    { volatile uint8_t i = 240; while (i--) {} }
+    { volatile uint8_t i = 3; while (i--) {} }
     gpio_unlatch_dac();
 }
 
@@ -61,8 +63,8 @@ void dac_override_clamp(const uint8_t xy[2])
     uint8_t pending_sw = 0;
     static const uint8_t sw_bits[2] = {SWX_BIT, SWY_BIT};
     
-    uint8_t* dac_buf_ptr = &dac01_write_buf[1];
-    for (uint8_t i = 0; i != 2; ++i, dac_buf_ptr += 3)
+    uint8_t* write_ptr = &dac_write_cmd[1];
+    for (uint8_t i = 0; i != 2; ++i, write_ptr += 3)
     {
         uint8_t dac_value;
 
@@ -76,9 +78,9 @@ void dac_override_clamp(const uint8_t xy[2])
         else
             continue;  /* Skip writing to DAC */
         
-        /* Update 12-bit value to transfer to DAC in transmit buffer */
-        dac_buf_ptr[0] = dac_value >> 4;
-        dac_buf_ptr[1] = (dac_value << 4) & 0xFF;
+        /* Update 10-bit value to transfer to DAC in transmit buffer */
+        write_ptr[0] = dac_value >> 6;
+        write_ptr[1] = (dac_value << 2) & 0xFF;
         pending_sw |= sw_bits[i];  /* Analog switch needs to be enabled after latch */
     }
     
@@ -91,24 +93,28 @@ void dac_override_clamp(const uint8_t xy[2])
         dac_buf_transfer();
 
     /* Enable/disable analog switches as needed */
-    SW_PORT = (SW_PORT & ~(SWX_BIT | SWY_BIT)) | pending_sw;
+    PORTx(SW_PORT) = (PORTx(SW_PORT) & ~(SWX_BIT | SWY_BIT)) | pending_sw;
     
-    log_dac(pending_sw & SWX_BIT, pending_sw & SWY_BIT, dac01_write_buf);
+    /* This routine gets called at about 500 Hz. Try to log at 20 Hz */
+    if (log_counter-- == 0)
+    {
+        log_dac(pending_sw & SWX_BIT, pending_sw & SWY_BIT, dac_write_cmd);
+        log_counter = 25;
+    }
 }
 
 /* -------------------------------------------------------------------------- */
-void dac_override_sequence(enum seq seq)
+void dac_override(const uint8_t xy[2])
 {
-    const struct config* c = config_get();
-
-    uint8_t* dac_buf_ptr = &dac01_write_buf[1];
+    uint8_t* write_ptr = &dac_write_cmd[1];
     for (uint8_t i = 0; i != 2; ++i)
     {
-        dac_buf_ptr[0] = c->angles[seq].xy[i] >> 4;
-        dac_buf_ptr[1] = (c->angles[seq].xy[i] << 4) & 0xFF;
-        dac_buf_ptr += 3;
+        write_ptr[0] = xy[i] >> 6;
+        write_ptr[1] = (xy[i] << 2) & 0xFF;
+        write_ptr += 3;
     }
 
     dac_buf_transfer();
-    log_dac(1, 1, dac01_write_buf);
+    PORTx(SW_PORT) |= (SWX_BIT | SWY_BIT);
+    log_dac(1, 1, dac_write_cmd);
 }

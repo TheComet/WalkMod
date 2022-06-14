@@ -10,9 +10,20 @@
 
 void gpio_init(void);
 
-#define SW_PORT PORTC
+#define PASTE2(x, y) x##y
+#define PASTE3(x, y, z) x##y##z
+
+#define PORTx(x) PASTE2(PORT, x)
+#define IOCxP(x) PASTE3(IOC, x, P)
+#define IOCxN(x) PASTE3(IOC, x, N)
+#define IOCxF(x) PASTE3(IOC, x, F)
+
+#define SW_PORT C
 #define SWX_BIT 0x20
 #define SWY_BIT 0x10
+
+#define BTN_PORT A
+#define BTN_BIT 0x10
 
 #define gpio_latch_dac() PORTAbits.RA2 = 0
 #define gpio_unlatch_dac() PORTAbits.RA2 = 1

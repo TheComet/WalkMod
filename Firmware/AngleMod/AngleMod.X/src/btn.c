@@ -1,52 +1,29 @@
 #include "anglemod/btn.h"
 #include <xc.h>
 
-enum state_bits
-{
-    NONE = 0x00,
-    PRESSED = 0x01,
-    RELEASED = 0x02
-};
-
-static volatile uint8_t state;
+uint8_t _btn_state = 0xFF;
 
 /* -------------------------------------------------------------------------- */
 void btn_init(void)
 {
+    /* 
+     * We don't actually do anything in the interrupt service routine. The only
+     * purpose of enabling these is so the device wakes up from sleep and then
+     * polls the state of the button
+     */
+    
     /* Enable interrupt-on-change on BTN pin (RA4) for both rising and falling
      * edges */
-    IOCAP = 0x10;
-    IOCAN = 0x10;
+    IOCxP(BTN_PORT) = BTN_BIT;
+    IOCxN(BTN_PORT) = BTN_BIT;
     
     /* Enable interrupt-on-change interrupt */
     PIE0bits.IOCIE = 1;
 }
 
 /* -------------------------------------------------------------------------- */
-uint8_t btn_pressed_get_and_clear(void)
-{
-    uint8_t pressed = (state & PRESSED);
-    state &= ~PRESSED;
-    return pressed;
-}
-
-/* -------------------------------------------------------------------------- */
-uint8_t btn_released_get_and_clear(void)
-{
-    uint8_t released = (state & RELEASED);
-    state &= ~RELEASED;
-    return released;
-}
-
-/* -------------------------------------------------------------------------- */
-uint8_t btn_is_active(void)
-{
-    return !(PORTA & 0x10);
-}
-
-/* -------------------------------------------------------------------------- */
 void btn_ioc_isr(void)
 {
-    state = (PORTA & 0x10) ? RELEASED : PRESSED;
-    IOCAF &= ~0x10;
+    /* Still need to clear the flag so we don't get stuck in an endless interrupt loop */
+    IOCxF(BTN_PORT) &= ~BTN_BIT;
 }

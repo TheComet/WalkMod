@@ -75,8 +75,10 @@ void pic16_process_events(void)
 #endif
 {
     char c;
+    
+    btn_poll();
 
-    if (btn_pressed_get_and_clear())
+    if (btn_pressed())
     {
         active_seq = seq_find(joy_state_history());
 
@@ -87,10 +89,12 @@ void pic16_process_events(void)
         }
         else
         {
-            dac_override_sequence(active_seq);
+            const struct config* c = config_get();
+            dac_override(c->angles[active_seq].xy);
         }
     }
-    else if (btn_released_get_and_clear())
+    
+    if (btn_released())
     {
         dac_override_disable();
         adc_set_slow_sampling_mode();
@@ -138,7 +142,7 @@ void main(void)
  * call the appropriate handler from here */
 void __interrupt() isr(void)
 {
-    if (IOCAF & 0x10)
+    if (IOCxF(BTN_PORT) & BTN_BIT)
         btn_ioc_isr();
     if (PIR1bits.ADIF)
         adc_isr();

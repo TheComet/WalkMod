@@ -107,7 +107,7 @@ static struct cli_cmd commands[] = {
     {"angle", "<index> <angle|<x> <y>>", "Configure the individual angles for command inputs.", cmd_angle},
     {"mirror", "<index> <x|y|xy>", "Mirrors the coordinates across the X or Y axis.", cmd_mirror},
     {"clamp", "<x> [y]", "Set the clamp threshold for normal mode. If only X is specified, then Y will be set to the same value as well.", cmd_clamp},
-    {"quantize", "<mode>", "Set the quantization mode for normal mode.", cmd_quantize},
+    /*{"quantize", "<mode>", "Set the quantization mode for normal mode.", cmd_quantize},*/
     {"save", "", "Save changes to non-volatile memory.", cmd_save},
     {"load", "", "Load values from non-volatile memory, discarding any changes.", cmd_discard},
     {"defaults", "", "Set default values.", cmd_defaults},
@@ -296,7 +296,7 @@ static void cmd_angle(uint8_t argc, char** argv)
                 360 - u16_atoi(argv[1] + 1) :
                 u16_atoi(argv[1]);
             int8_t x0 = fpcos(a);
-            int8_t y0 = fpsin(a);
+            int8_t y0 = -fpsin(a);
             c->angles[i].xy[0] = (uint8_t)(x0 + 127);
             c->angles[i].xy[1] = (uint8_t)(y0 + 127);
         }
@@ -531,7 +531,7 @@ void log_dac(uint8_t swx, uint8_t swy, const uint8_t* dac01_write_buf)
     uart_printf("\r\n" BLUEC("DAC0: "));
     if (swx)
     {
-        uint8_t value = (uint8_t)(dac01_write_buf[1] << 4) | (dac01_write_buf[2] >> 4);
+        uint8_t value = (uint8_t)(dac01_write_buf[1] << 6) | (dac01_write_buf[2] >> 2);
         uart_printf("%u", value);
     }
     else
@@ -539,7 +539,7 @@ void log_dac(uint8_t swx, uint8_t swy, const uint8_t* dac01_write_buf)
     uart_printf("\x1b[K\r\n" BLUEC("DAC1: "));    
     if (swy)
     {
-        uint8_t value = (uint8_t)(dac01_write_buf[4] << 4) | (dac01_write_buf[5] >> 4);
+        uint8_t value = (uint8_t)(dac01_write_buf[4] << 6) | (dac01_write_buf[5] >> 2);
         uart_printf("%u", value);
     }
     else
